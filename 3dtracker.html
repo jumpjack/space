@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+1.5.2 - (Work in progress)
+	Tolto bug di distanza errata mostrata in console
+	Tento di aggiungere label a raggi, per capire a cosa puntano anche se il bersaglio non è visibile (aggiungo "label")
+	>>>Perchè DART non si vede anche se in console appaiono messaggi corretti?
+1.5.1 - Corretti alcuni bug in tracciamento di frecce verso oggetti non ben definiti (senza nome, o senza distanza); soppresso tracciamento subpoint di hayabusa; aggiunti messaggi di debug.
+1.5.0 - Tolti puntatori al sole, corretta visualizzazione di tutti i raggi di tutte le antenne.
+1.4.0 - Sostituito Cors Anywhere con mio proxy
+1.3.0 - Sistemata gestione antenne DSN, così ora si può vedere anche dov'è Osiris Rex.
+1.2.0x - Aggiunta linea di giunzione tra hayabusa e centro della terra, per vedere su quale territorio sta volando Hayabusa; risolto bug di loinee non cancellate al refresh
+1.1.0 - Corretto bug distanza in prima tabella; implementata lettura realtime file eventi per haya+capsula.
+1.0.0 - Prima versione completa, ripulita e integrata con timers; manca ancora il marker con la posizione di Hayabusa, perchè bisogna trasformare
+	  - le coordinate da solari a terrestri.
+0.0.8 - Eliminate antenne che dovrebbero puntare sotto l'orizzonte per vedere H2; aggiunti dettagli in descrizione delle antenne.
+0.0.7 -
+0.0.6u Sistemato numero di linee verso haya e sole
+0.0.5u Cambiato algoritmo puntamento
+0.0.4c Esperimenti di puntamento solare
+0.0.3c Aggiunti dati in tabella; aggiunta importazione file XML per antenne NASA DSN; aggiunti raggi verso il sole; frecce di orari successivi tracciate in grigio.
+0.0.2 Aggiunta griglia lat/lon
+0.0.1 Prima versione pubblica
+Da implementare:
+	Marker 3d Hayabusa
+	Distanza in km
+	Conversione dati antenne DSN da XML a JSON (https://github.com/javadev/xml-to-json )
+	Aggiuongere link a stazioni DSN
+	Attivare tasto Refresh
+	Mostrare orario di generazione dei dati
+-->
+<head>
+  <meta charset="utf-8">
+  <!-- Include the CesiumJS JavaScript and CSS files -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.75/Build/Cesium/Cesium.js"></script>
+  <script src="http://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=http%3A%2F%2Fwin98.altervista.org%2Fspace%2Fexploration%2F3d%2Fjs%2Fxml2jsobj.js")></script>
+  <script src="http://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=http%3A%2F%2Fwin98.altervista.org%2Fspace%2Fexploration%2F3d%2Fjs%2FDSN.js")></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.75/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+</head>
+<body style="background-color:#000000; color:white">
+
+  <center><big><big><big>Deep Space Network</big></big></big><br>
+  3d viewer<br>
+  <small><i>by Luca Cassioli</i></small><br>
+  V.1.5.1 - 30/08/2021<br>
+  Made with <a href="https://sandcastle.cesium.com/?src=Points.html">CesiumJS</a><br>
+  </center><br>
+    <div id="test" name="test"><button id="btnRefresh" name="btnRefresh" onclick="update(null)">Refresh</button></div>
+	Lastest page update: <span id="refreshTime" name="refreshTime">-</span><br>
+	Latest telemetries times:<br>
+	Generated: <span id="timeGen" name="timeGen"></span> - Received: <span id="timeRec" name="timeRec"></span> - Updated to Web: <span id="timeUpd" name="timeUpd"></span><br>
+	Latest pointing time: <span id="timePoint" name="timePoint">-</span><br>
+	Distances in light-seconds:  to: <span id="to" name="to">-</span>, from:  <span id="from" name="from">-</span>,  diff: <span id="diff" name="diff">-</span>, Dist: <span id="km" name="km">-</span>
+  <div id="cesiumContainer" style="width: 1250px">
+     <div class="toolbar-left" style="display: block;position: absolute; top: 0px;left: 0px;">
+<!--      <button id="btnHome" name="btnHome">Home</button>
+    <button id="btnDestination" name="btnDestination">Destination</button>
+-->	</div>
+  </div>
+  <br>
+  <span id="dati" name="dati">--</span><br>
+  NASA Deep Space Network status page: <a href="https://eyes.nasa.gov/dsn/dsn.html">link</a><br>
+  Raw Hayabusa 2 data: <a href="http://jsonviewer.stack.hu/#http://haya2now.jp/data/data.json">link</a><br>
+  <br>
+  <br>
+<hr>
+  <br>
+
+  <div id="divB" >
+Ora attuale ialiana: <span id="now" name="now" style="color:yellow"></span><br> <br>
+<span id="timers" name="timers">0</span>
+<table border=1 bgcolor="#000000" text="#FFFFFF">
+<tr>
+<td style="background-color:#888888">
+Date di riferimento estratte AUTOMATICAMENTE da <a href="https://www.hayabusa2.jaxa.jp/hy2sc4/data/events.json">questo file</a><br>
+<a href="https://www.hayabusa2.jaxa.jp/hy2sc4/">Pagina originale JAXA</a><br>
+<a href="http://win98.altervista.org/hayabusa2/hayabusa2-tracker.html?xaxis=4&yaxis1=30&yaxis2=33&separator=%5Ct&first=7750&yzoom=10000000">Tracker 2d</a><br>
+</td>
+</tr>
+</table>
+  </div>
+
+<div id="divA" >
+  <img src="haya-home-trajectory.png"><br>
+  </div>
+
+
+
+  <script>
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyZWYwMzkyNy1kZWI4LTQ0ZDctYWE2Ni1jZDc5OWY3YjEwZDQiLCJpZCI6Mzc2NjgsImlhdCI6MTYwNTM2NTcwMn0.gfyVDKfjLzWGxgFxRcEmWzxdzgMNlbUEo96qALfrDp8';
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+      terrainProvider: Cesium.createWorldTerrain()
+    });
+    viewer.scene.globe.enableLighting = true;
+
+
+    // Add Cesium OSM Buildings, a global 3D buildings layer.
+    const buildingTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());
+	var simUpdateStep = 10; //update time step in seconds; will be scaled by clock multiplier
+	var lastUpdateTime = new Cesium.JulianDate(0,0);
+    prevSeconds = lastUpdateTime.secondsOfDay;
+    var velocitaLuce = 299792458; //m/s
+
+
+
+buildingTileset.loadProgress.addEventListener(function(a, b) {
+	//console.log("Tiles.");
+//	console.log(a);
+	//console.log(b);
+	}
+);
+
+
+
+var antennaAdded = 0;
+var cicli=0;
+objDates = [];
+stationCount = 0;
+lineCount = 0;
+spacecraftCount = 0;
+spacecraftName = "Hayabusa 2";
+
+entLine = [];
+entStationMarker = [];
+entStationLabel = [];
+entDSNMarker = [];
+entDSNLabel = [];
+entSpacecraftMarker = [];
+
+
+function flyTo(pos) {
+	viewer.camera.flyTo({destination:pos, complete: function () {viewer.camera.moveBackward(1000); viewer.camera.moveUp(100)}});
+}
+
+
+
+function drawLine(x1,y1,z1, x2, y2, z2, width, color,  dashed, targetName) {
+  var origin = new Cesium.Cartesian3(x1,y1,z1);
+  var dest = new Cesium.Cartesian3(x2,y2,z2);
+
+
+	lineCount++;
+
+	if (dashed) {
+		entLine[lineCount] = viewer.entities.add({
+		  polyline: {
+		      positions: [
+		        origin,
+		        dest
+		        ],
+		    arcType: Cesium.ArcType.NONE   ,
+		    width: width,
+		    material: new Cesium.PolylineDashMaterialProperty({color: color}),
+			description : targetName,
+			label: targetName
+		  }
+		});
+	} else {
+		entLine[lineCount] = viewer.entities.add({
+		  polyline: {
+			positions: [
+			  origin,
+			  dest
+			  ],
+			arcType: Cesium.ArcType.NONE   ,
+			width: width,
+			material: new Cesium.PolylineArrowMaterialProperty(color),
+			description : targetName,
+			label: targetName
+		  }
+		});
+  }
+  
+console.log("Target label=",targetName);
+  // add target label:
+	viewer.entities.add({
+			  position: dest,
+			  point: {
+			      color: Cesium.Color.YELLOW,
+			      pixelSize: 18,
+			},
+			  label: {
+			    text: targetName,
+			    font: "14px Helvetica",
+			    pixelOffset: new Cesium.Cartesian2(0.0, 20),
+			},
+			  description : targetName
+			});  
+}
+
+
+
+function createROIfromRotation(position,  rotation, length) {
+//console.log("Ricevo infine distanza m = " + length);
+  // position: Cartographic - {latitude, longitude, altitude})
+  // rotation: HeadingPitchRoll - {heading, pitch, roll}
+
+  // Based on answer found here:
+  // https://stackoverflow.com/questions/58021985/create-a-point-in-a-direction-in-cesiumjs
+
+    var cartesianPosition = Cesium.Ellipsoid.WGS84.cartographicToCartesian(position);
+
+    rotation.heading = rotation.heading - Cesium.Math.toRadians(90);
+    var referenceFrame1 = Cesium.Transforms.headingPitchRollQuaternion(cartesianPosition, rotation);
+    var rotationMatrix = Cesium.Matrix3.fromQuaternion(referenceFrame1, new Cesium.Matrix3());
+    var rotationScaled = Cesium.Matrix3.multiplyByVector(rotationMatrix, new Cesium.Cartesian3(length, 0, 0), new Cesium.Cartesian3());
+    var roiPos = Cesium.Cartesian3.add(cartesianPosition, rotationScaled, new Cesium.Cartesian3());
+    return roiPos;
+}
+
+
+
+
+function arrowFromTo(latitude, longitude, height, elev, azimut, length, width, color, drawOrNot, targetName){
+
+	if (length <= 100) {
+		console.log("WARNING: length for target " , targetName , " is just " , length); //, " not drawing segment long " , length , " to alt=", elev, ", az=", azimut);
+        length = 100;
+        targetName += " (wrong distance)";
+		// return
+	}
+	if (targetName == null) {
+		console.log("WARNING: target has no name, dist= " , length , ", alt=", elev, ", az=", azimut);
+		targetName = "[n/a_001]";
+	//return;
+	}
+	if (targetName.length == 0 ) {
+		console.log("WARNING: target has no name,  dist= " , length , ", alt=", elev, ", az=", azimut);
+		targetName = "[n/a_002]";
+	//return;
+	}
+
+
+  latitude = Cesium.Math.toRadians(latitude);
+  longitude = Cesium.Math.toRadians(longitude);
+  var origin = new Cesium.Cartographic(longitude, latitude, height);
+  var originC3 = new Cesium.Cartographic.toCartesian(origin);
+
+  // Altitude (aka Elevation) and Azimuth can also be seen as Pitch and Heading, with Roll = 0:
+  var heading = Cesium.Math.toRadians(azimut);
+  var pitch = Cesium.Math.toRadians(elev);
+  var roll = 0.0;
+  var direction = new Cesium.HeadingPitchRoll(heading, pitch, roll);
+
+  ////////////
+  var result = createROIfromRotation(origin, direction, length);
+  ////////////
+
+	if (drawOrNot) {
+		if ((targetName !== null) && (targetName !== "")){ 
+  			drawLine(originC3.x ,originC3.y, originC3.z, result.x ,result.y, result.z, width, color, false, targetName);
+  		} else {
+  			drawLine(originC3.x ,originC3.y, originC3.z, result.x ,result.y, result.z, width, color, false, targetName + "err"); // serve? debug
+  		}
+	} else {
+console.log("not drawn target ' " + targetName + "'");
+		return result;
+	}
+
+}
+
+
+function drawSubPosition(latitude, longitude, height, elev, azimut, length) {
+console.log("drawSubPosition");
+	var target = arrowFromTo(latitude, longitude, height, elev, azimut, length, 1, Cesium.Color.WHITE, false, "");
+    //drawLine(0,0,0, target.x ,target.y, target.z, 1, Cesium.Color.WHITE, false, ""+"DEBUG2");
+}
+
+
+
+function addAntenna(originLon, originLat, originHeight, name, elev, az, sunElev, sunAz, lineType, hayabusaDistance, sunDistance) {
+	antennaAdded++;
+	stationCount++;
+//	console.log("antennaAdded = "+name);
+	//console.log("Ricevo distanze 1 in metri = " + hayabusaDistance, sunDistance);
+	
+	if (elev<0) {
+	    horizonStatus = " (below horizon)";
+	} else  {
+	    horizonStatus = "";
+	}
+	
+	if (sunElev<0) {
+	    sunStatus = " (night)";
+	} else  {
+	    sunStatus = "";
+	}
+
+  var origin = Cesium.Cartesian3.fromDegrees(originLon, originLat, originHeight); //lon, lat,  alt (meters)
+	if (lineType == "faint") {
+		hayaMaterial =  new Cesium.PolylineArrowMaterialProperty(Cesium.Color.LIGHTGREY.withAlpha(0.5));
+	} else {
+		hayaMaterial = new Cesium.PolylineArrowMaterialProperty(Cesium.Color.BLUE);
+	}
+
+	if (stationCount <= obj.geometry[0].obs.length) { // Add stations only first time
+		// Station marker:
+		entStationMarker[stationCount] = viewer.entities.add({
+		  position: origin,
+		  point: {
+		      color: Cesium.Color.RED,
+		      pixelSize: 18,
+		},
+		  label: {
+		    //text: name,
+		    //font: "14px Helvetica",
+		    //pixelOffset: new Cesium.Cartesian2(0.0, 20),
+		},
+		  description : name + "<br>Hayabusa 2 alt:" + elev + horizonStatus + "<br>Hayabusa 2 az:" + az + "<br>Sun alt: "+ sunElev + sunStatus + "<br>Sun az:" + sunAz
+		});
+
+		// Station label:
+		entStationLabel[stationCount] = viewer.entities.add({
+		  position:  Cesium.Cartesian3.fromDegrees(originLon,originLat,200000),
+		  point: {
+		      color: Cesium.Color.BLACK,
+		      pixelSize: 1,
+		},
+		  label: {
+		    text: name,
+		    font: "24px Helvetica",
+		    pixelOffset: new Cesium.Cartesian2(0.0, 20),
+		},
+		  description : "<a href='http://www.google.com'>" + name + "</a><br>Hayabusa 2 alt:" + elev + horizonStatus + "<br>Hayabusa 2 az:" + az + "<br>Sun alt: "+ sunElev + sunStatus + "<br>Sun az:" + sunAz
+		});
+	}
+
+
+	// Sun angles:
+	// UDSC64 https://planetcalc.com/320/?day=2020-11-19%2004:31:37&plat=36.13&plon=138.36&gmtdiff=0&UTCoffset=0
+	// USC34 https://planetcalc.com/320/?day=2020-11-19%2004:31:37&plat=31.25&plon=131.08&gmtdiff=0&UTCoffset=0
+	// DSS-43 https://planetcalc.com/320/?day=2020-11-19%2004:31:37&plat=-35.4&plon=148.98&gmtdiff=0&UTCoffset=0
+
+
+	//////// Arrow to Hayabusa 2:
+	dir = " - El=" + elev + ", Az=" + az;
+	//console.log("HAYA:",name,dir);
+	if (elev>0) {
+		w=10;
+console.log("Darwing arrows to Hayabusa 2");
+		arrowFromTo(originLat, originLon, originHeight, elev, az, hayabusaDistance, 10 , Cesium.Color.WHITE, true, "Target: " + spacecraftName + "\ndist: " + hayabusaDistance + "km")
+		status = "";
+	} else {
+	    w=1;
+	    status = " (Below the horizon)";
+	}
+
+
+
+	////////////////
+	// Arrow to Sun:
+	sunDir = " - El=" + sunElev + ", Az=" + sunAz;
+//	console.log("SUN:",name, sunDir);
+
+	if (sunElev>0) {
+//console.log("****************"  + name + ": Sole VISIBILE");
+//		arrowFromTo(originLat, originLon, originHeight, sunElev, sunAz, sunDistance, 5, Cesium.Color.YELLOW, true, "Sun")
+	} else {
+//console.log("--------------("  + name + ": Sole sotto l'orizzonte)");
+		// Do not draw if below horizon
+	}
+}
+
+
+
+
+/*function CalcPosFromAltAzDist(center, vectorPointing) {
+  // Extract single data from input:
+  var Altitude = vectorPointing.alt  * Math.PI / 180;
+  var Azimuth = vectorPointing.az  * Math.PI / 180;
+  var Length = vectorPointing.dist;
+
+  // Calculate cartesian coordinate of a point on a generic sphere of radius = length and centered on (0,0,0):
+  var genericX = Length * Math.sin(Azimuth);
+  var genericY = Length * Math.cos(Azimuth);
+  var genericZ = Length * Math.sin(Altitude);
+
+  // Assign the coordinates to a Cartesian3 object:
+  var floatingPoint = new Cesium.Cartesian3(genericX, genericY, genericZ);
+
+  // Setup function to turn generic coordinates into referenced coordinates:
+  var toENU = Cesium.Transforms.eastNorthUpToFixedFrame(center);
+
+  // Put the point into a reference system (East-North-Up):
+  var referencedPoint = Cesium.Matrix4.multiplyByPoint(toENU, floatingPoint, new Cesium.Cartesian3());
+
+  return referencedPoint;
+}
+*/
+
+function addDSN(originLon, originLat, originHeight, name, elev, az, targetName, targetDistance) {
+  var origin = Cesium.Cartesian3.fromDegrees(originLon, originLat, originHeight); //lon, lat,  alt (meters)
+	stationCount++;
+	if (stationCount < 2) { // Add stations only first time
+		// Station marker:
+		entDSNMarker[stationCount] = viewer.entities.add({
+		  position: origin,
+		  point: {
+		      color: Cesium.Color.YELLOW,
+		      pixelSize: 18,
+		},
+		  label: {
+		    //text: name,
+		    //font: "14px Helvetica",
+		    //pixelOffset: new Cesium.Cartesian2(0.0, 20),
+		},
+		  //description : name
+		});
+
+	/*	// Station label:
+		entDSNLabel[stationCount] = viewer.entities.add({
+		  position:  Cesium.Cartesian3.fromDegrees(originLon,originLat,200000),
+		  point: {
+		      color: Cesium.Color.BLACK,
+		      pixelSize: 1,
+		},
+		  label: {
+		    text: name,
+		    font: "24px Helvetica",
+		    pixelOffset: new Cesium.Cartesian2(0.0, 20),
+		},
+		  description : name
+		});
+	*/
+	}
+	if (targetDistance * 1.0 > 100) {
+console.log("        Valid DSN data for station " + name + ", pointing to " + targetName + ", distant " + (((targetDistance*1.0/1000).toFixed(0)*1.0).toLocaleString()) + "km" );
+		arrowFromTo(originLat, originLon, originHeight, elev, az, targetDistance, 10, Cesium.Color.GREY, true, "Target: " + targetName + "\ndist: " + (((targetDistance*1.0/1000).toFixed(0)*1.0).toLocaleString()) + " km");
+	} else {
+console.log("        INVALID  target distance for station " + name + ", pointing to " + targetName + ", distant " + (((targetDistance*1.0/1000).toFixed(0)*1.0).toLocaleString()) + " km, drawing a generic arrow poining at alt=" + elev + ", az=" + az );
+		arrowFromTo(originLat, originLon, originHeight, elev, az, 1000000,      10, Cesium.Color.RED, true, "Target: " + targetName + "\ndist: " + (((targetDistance*1.0/1000).toFixed(0)*1.0).toLocaleString()) + " km (invalid)");
+	}
+
+}
+
+
+
+
+function drawGrid() {
+	var scene = viewer.scene;
+
+	latLonGrid = new Cesium.PolylineCollection();
+	for (var lon=0; lon<360; lon+=10) {
+	  // North
+	   for(var lat=0; lat<90; lat += 10) {
+	    latLonGrid.add({
+	        positions: Cesium.Cartesian3.fromDegreesArray([
+	          lon,lat,
+	          lon+10,lat
+	        ]),
+	        width: 1,
+	       arcType: Cesium.ArcType.GEODESIC,
+	    });
+
+
+	   latLonGrid.add({
+	        positions: Cesium.Cartesian3.fromDegreesArray([
+	          lon,lat,
+	          lon,lat+10
+	        ]),
+	        width: 1,
+	       arcType: Cesium.ArcType.GEODESIC,
+	    });
+
+     }
+
+
+
+    // South
+     for(lat=-90; lat<0; lat += 10) {
+      latLonGrid.add({
+          positions: Cesium.Cartesian3.fromDegreesArray([
+            lon,lat,
+            lon+10,lat
+          ]),
+          width: 1,
+          //show: true
+      });
+
+
+     latLonGrid.add({
+          positions: Cesium.Cartesian3.fromDegreesArray([
+            lon,lat,
+            lon,lat+10
+          ]),
+          width: 1,
+         arcType: Cesium.ArcType.GEODESIC,
+      });
+     }
+
+  }
+
+  latLonGrid.show = true;
+  viewer.scene.primitives.add(latLonGrid);
+}
+
+
+document.addEventListener(
+	"DOMContentLoaded", function(event) {
+    	drawGrid();
+		main();
+		//viewer.clock.onTick.addEventListener(update);
+console.log("Pagina completata.");
+	}
+);
+
+
+
+/*document.getElementById("btnHome").addEventListener("click", function(event) {
+//
+}
+);
+
+*/
+/*
+document.getElementById("btnDestination").addEventListener("click", function(event) {
+	flyTo(hayabusa2PosWrtEarth);
+}
+);
+*/
+
+
+
+function main() {
+	document.getElementById("refreshTime").innerHTML = new Date();
+	for (lineDelete = 0; lineDelete <= lineCount; lineDelete++) {
+		console.log("Deleting line " + entLine[lineDelete]);
+		viewer.entities.remove(entLine[lineDelete]);
+	}
+	lineCount = 0;
+	retrieveURL("http://haya2now.jp/data/data.json");
+}
+
+
+
+
+
+function update(clock) {
+	if (clock == null) {
+		console.log("Aggiorno manualmente");
+	    lastUpdateTime = viewer.clock.currentTime;
+	    prevSeconds = lastUpdateTime.secondsOfDay;
+		main();
+		return;
+	}
+    //updating too often brings cesium to a halt
+    diff = viewer.clock.currentTime.secondsOfDay - prevSeconds;
+//console.log("Tempo trascorso da ultimo aggiornamento: "+ diff);
+//console.log("Tempo necessario: "+ simUpdateStep);
+
+    if(diff < simUpdateStep) {
+		return;
+	}
+//    console.log("Aggiorno...");
+    lastUpdateTime = clock.currentTime;
+    prevSeconds = lastUpdateTime.secondsOfDay;
+    main();
+}
+
+function retrieveDates() {
+		var clientDates = new XMLHttpRequest();
+		var url = "http://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=" + encodeURIComponent("https://www.hayabusa2.jaxa.jp/hy2sc4/data/events.json");
+		clientDates.open('GET', url);
+		clientDates.responseType = 'text';
+		clientDates.onload = function() {
+			objDates=JSON.parse(clientDates.response);
+            startTimers();
+//console.log(objDates);
+		}
+
+		clientDates.onloadstart = function () {
+			console.log("Request for dates sent.\n");
+		}
+
+		clientDates.onloadend = function () {
+			console.log("Download of dates finished.\n");
+		}
+
+		clientDates.onerror = function (a) {
+			console.log(a);
+			console.log("!!NETWORK ERROR FOR EVENTS DATES!!\n");
+		}
+
+		clientDates.onprogress = function () {
+			console.log("Downloading dates...\n");
+		}
+
+		clientDates.onabort = function () {
+			console.log("!!ABORTED ON DATES!!\n");
+		}
+
+
+		try {
+			clientDates.send();
+		} catch(e) {
+			console.log("ECCEZIONE su DATE!");
+			console.log(e);
+		}
+}
+
+
+function retrieveURL(url) {
+	var groupHeader = "<tr><td colspan=4><center>Station data</center></td><td colspan=5><center>Hayabusa 2 data</center></td><td colspan=2><center>Sun data</center></td></tr>";
+	var client = new XMLHttpRequest();
+	prefix = "http://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=" ; 
+	client.open('GET', prefix + encodeURIComponent(url));
+	client.responseType = 'text';
+	client.onload = function() {
+//console.log("Downloading completed", client.response);
+		obj=JSON.parse(client.response);
+		document.getElementById("timeGen").innerHTML = obj.status.spacecraft.generatedAt;
+		document.getElementById("timeRec").innerHTML = obj.status.spacecraft.receivedAt;
+		document.getElementById("timeUpd").innerHTML = obj.status.updatedAt;
+		document.getElementById("timePoint").innerHTML = obj.geometry[0].UTC;
+		dataText = "<table border=1>";
+		geometry = 0;
+		cicli++;
+		dataText += groupHeader +
+		"<tr><td>Station ID</td><td>Latitude (degrees)</td><td>Longitude (degrees)</td><td>Altitude (meters)</td>" +
+		"<td>Elevation (degrees)</td><td>Azimuth (degrees)</td><td>Distance (km)</td><td>Time delay from</td><td>Time delay to</td>" +
+		"<td>Elevation (degrees)</td><td>Azimuth (degrees)</td></tr>";
+
+		for (var observer=0; observer < obj.geometry[0].obs.length; observer++) {
+			arrowType = "solid";
+			geometryObserver = obj.geometry[0].obs[observer];
+			dish = obj.geometry[0];
+			var EarthX = dish.earth.x * 1000;
+			var EarthY = dish.earth.y * 1000;
+			var EarthZ = dish.earth.z * 1000;
+			var Hayabusa2X = dish.hayabusa2.x * 1000;
+			var Hayabusa2Y = dish.hayabusa2.y * 1000;
+			var Hayabusa2Z = dish.hayabusa2.z * 1000;
+			var EarthHayabusaDistanceRaw = Math.sqrt(Math.pow(EarthX - Hayabusa2X,2) + Math.pow(EarthY - Hayabusa2Y,2) + Math.pow(EarthZ - Hayabusa2Z,2));
+			EarthHayabusaDistanceNoDecimals = EarthHayabusaDistanceRaw.toFixed(0)*1.0;
+			EarthHayabusaDistanceFinal = EarthHayabusaDistanceNoDecimals.toLocaleString();
+
+			hayabusaPosWrtEarthX = Hayabusa2X - EarthX;
+			hayabusaPosWrtEarthY = Hayabusa2Y - EarthY;
+			hayabusaPosWrtEarthZ = Hayabusa2Z - EarthZ;
+			hayabusa2PosWrtEarth = new Cesium.Cartesian3(hayabusaPosWrtEarthX,hayabusaPosWrtEarthY,hayabusaPosWrtEarthZ);
+
+			var EarthSunDistanceRaw = Math.sqrt(Math.pow(EarthX,2) + Math.pow(EarthY,2) + Math.pow(EarthZ,2));
+			EarthSunDistanceNoDecimals = EarthSunDistanceRaw.toFixed(0)*1.0;
+			EarthSunDistanceFinal = EarthSunDistanceNoDecimals.toLocaleString();
+
+
+			addAntenna(geometryObserver.longitude,
+				geometryObserver.latitude,
+				geometryObserver.altitude,
+				geometryObserver.name,
+				geometryObserver.hayabusa2.alt,
+				geometryObserver.hayabusa2.azm,
+				geometryObserver.sun.alt,
+				geometryObserver.sun.azm,
+				arrowType,
+				EarthHayabusaDistanceNoDecimals,
+				EarthSunDistanceNoDecimals);
+
+//			drawSubPosition(geometryObserver.latitude, geometryObserver.longitude,  0, geometryObserver.hayabusa2.alt,geometryObserver.hayabusa2.azm, EarthHayabusaDistanceNoDecimals);
+
+			dataText += "<tr><td>"
+				+ geometryObserver.name + "</td><td>"
+				+ geometryObserver.latitude + "</td><td>"
+				+ geometryObserver.longitude + "</td><td>"
+				+ geometryObserver.altitude + "</td><td>"
+				+ geometryObserver.hayabusa2.alt + "</td><td>"
+				+ geometryObserver.hayabusa2.azm + "</td><td>"
+				+ ((EarthHayabusaDistanceNoDecimals/1000).toFixed(0)*1.0).toLocaleString() + "</td><td>"
+				+ geometryObserver.hayabusa2.delay_from + "</td><td>"
+				+ geometryObserver.hayabusa2.delay_to + "</td><td>"
+				+ geometryObserver.sun.alt + "</td><td>"
+				+ geometryObserver.sun.azm + "</td></tr>";
+		} // for
+
+		var to = geometryObserver.hayabusa2.delay_to;
+		var from = geometryObserver.hayabusa2.delay_from;
+		var diff = from-to;
+		var km = to * velocitaLuce / 1000; // meters
+		document.getElementById("to").innerHTML = to.toFixed(2) + "sec";
+		document.getElementById("from").innerHTML = from.toFixed(2) + "sec";
+		document.getElementById("diff").innerHTML = diff.toFixed(2) + "sec";
+		document.getElementById("km").innerHTML = (km.toFixed(0)*1.0).toLocaleString() + " km" ;
+
+
+		if (geometry < obj.geometry.length -1) {
+			dataText += "</table><br><br><table border=1";
+		} else {
+			dataText += "</table><br><br>";
+		}
+
+
+		document.getElementById("dati").innerHTML = dataText;
+
+		// set clock
+		stationTime = obj.geometry[0].UTC;
+		spacecraftTime = obj.status.spacecraft.receivedAt;
+		a =  new Date(stationTime);
+		YYYY = a.getFullYear();
+		Mo = a.getMonth() + 1;
+		DD = a.getDate();
+		HH = a.getHours();
+		Mi = a.getMinutes();
+		myDate = YYYY + "-" + Mo + "-" + DD + " " + HH + ":" + Mi;
+		ISOdate = (new Date(myDate)).toISOString();
+		viewer.clock.currentTime = Cesium.JulianDate.fromIso8601(stationTime + ".000Z");
+
+		retrieveDates();
+
+
+		// Aggiunge antenne DSN:
+		xhr = new XMLHttpRequest();
+		xhr.onreadystatechange = DSN_XHRhandler; // >>> Chiama la routine che visualizza le antenne in base ai dati scaricati
+		// "http://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=" + encodeURIComponent(fullURL)
+		xhr.open("GET", "http://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=" + encodeURIComponent("https://eyes.nasa.gov/dsn/data/dsn.xml?r=321076546"), true);
+		xhr.send(null);
+
+	}; // client onload
+
+
+	client.onloadstart = function () {
+		console.log("Request sent.\n");
+	}
+
+	client.onloadend = function () {
+		console.log("Download finished.\n");
+	}
+
+	client.onerror = function (a) {
+		console.log("error");
+		console.log(a);
+		console.log("!!NETWORK ERROR!!\n");
+	}
+
+	client.onprogress = function () {
+		console.log("Downloading...\n");
+	}
+
+	client.onabort = function () {
+		console.log("!!ABORTED!!\n");
+	}
+
+	try {
+		client.send();
+	} catch(e) {
+		console.log("ECCEZIONE!");
+		console.log(e);
+	}
+}
+
+function DSN_XHRhandler() {
+	if (xhr.readyState == 4) {
+//console.log("DNS XML response:" , xhr.responseXML.documentElement, );
+		objDSN = XML2jsobj(xhr.responseXML.documentElement);
+console.log("Number of antennas in data: ", objDSN.dish.length);
+		for (var index=0; index < objDSN.dish.length; index++) {
+			stationData = getDSNcoord(objDSN.dish[index].name);
+console.log("Processing DSN antenna n. ", index,":",objDSN.dish[index].name)
+			if (objDSN.dish[index].target) {
+						targetName = objDSN.dish[index].target.name;
+						targetDownLegRange = objDSN.dish[index].target.downlegRange;
+			} else {
+						targetName = "[no target name]";
+						targetDownLegRange = 1000;
+			}
+			if (stationData.valid) {
+				stationCartesian = new Cesium.Cartesian3(stationData.x, stationData.y, stationData.z);
+				stationCartographic = new Cesium.Cartographic.fromCartesian(stationCartesian);
+				lonRad = stationCartographic.longitude;
+				lonDeg =  Cesium.Math.toDegrees(lonRad);
+				latRad =  stationCartographic.latitude;
+				latDeg =  Cesium.Math.toDegrees(latRad);
+console.log("    JAXA antenna: name=" + objDSN.dish[index].name + " ,El=" + objDSN.dish[index].elevationAngle + ", Az=" + objDSN.dish[index].azimuthAngle + ", Target=" +  targetName +   ", Distance = " +  targetDownLegRange + " km ");
+		         addDSN(lonDeg, latDeg, 0, objDSN.dish[index].name,  objDSN.dish[index].elevationAngle, objDSN.dish[index].azimuthAngle,targetName, targetDownLegRange*1000);
+			} else {
+console.log("    ***non-JAXA antenna: name=" + objDSN.dish[index].name + " ,El=" + objDSN.dish[index].elevationAngle + ", Az=" + objDSN.dish[index].azimuthAngle + ", Target=" +  targetName +   ", Distance = " +  targetDownLegRange + " km ");
+		         addDSN(lonDeg, latDeg, 0, objDSN.dish[index].name,  objDSN.dish[index].elevationAngle, objDSN.dish[index].azimuthAngle,objDSN.dish[index].target.name, objDSN.dish[index].target.downlegRange*1000);
+			}
+		}
+		xhr = null;
+	} else {
+// non pronto
+	}
+
+}
+
+
+function getDSNcoord(name) {
+	// Returns "valid" if dish present in JAXA list
+	var found = false;
+	for (var i=0; i< DSNdata.length; i++) {
+		if (DSNdata[i].name.toUpperCase() == name.toUpperCase() ) {
+			found = true;
+			return {x : DSNdata[i].x, y: DSNdata[i].y, z: DSNdata[i].z , valid : found};
+		}
+	}
+	if (!found) {
+    	return {x : 0, y : 0, z : 0, valid : found}
+	}
+}
+
+
+
+function startTimers() {
+	var countDownDate = [];
+	var distance = [];
+	var days = [];
+	var hours = [];
+	var minutes = [];
+	var seconds = [];
+	var index = 0;
+	var refDate = [];
+	spaceEvent = [];
+
+	// Set the date we're counting down to
+	for (index = 0; index < objDates.hayabusa2.length; index++) {
+		spaceEvent[index] = {"name": "(hayabusa2) " + objDates.hayabusa2[index].label, 	"date" : new Date(objDates.hayabusa2[index].epoch).getTime(), "dateUTC" : objDates.hayabusa2[index].epoch};
+		countDownDate[index] = spaceEvent[index].date;
+	}
+
+	for (newIndex = index; newIndex < objDates.capsule.length + index; newIndex++) {
+		spaceEvent[newIndex] = {"name": "(capsule) " + objDates.capsule[newIndex - index].label, 	"date" : new Date(objDates.capsule[newIndex - index].epoch).getTime(), "dateUTC" : objDates.capsule[newIndex - index].epoch};
+		countDownDate[newIndex] = spaceEvent[newIndex].date;
+	}
+
+
+
+	// Update the count down every 1 second
+	var x = setInterval(function() {
+		tab = "<table border=1><tr><td>Event</td><td>UTC time</td><td>Italian time</td><td>Status</td></tr>";
+
+		// Get todays date and time
+		var now = new Date().getTime();
+	    for (index = 0; index < objDates.hayabusa2.length + objDates.capsule.length; index++) {
+
+//console.log("now", now, "refDate", spaceEvent[index].date, "dist", distance);
+	      // Find the distance between now an the count down date
+	      distance[index] = countDownDate[index] - now;
+
+	      // Time calculations for days, hours, minutes and seconds
+	      days[index] = Math.floor(distance[index] / (1000 * 60 * 60 * 24));
+	      hours[index] = Math.floor((distance[index] % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+	      minutes[index] = Math.floor((distance[index] % (1000 * 60 * 60)) / (1000 * 60));
+	      seconds[index] = Math.floor((distance[index] % (1000 * 60)) / 1000);
+
+	      document.getElementById("now").innerHTML = (new Date()).toLocaleString();
+	      if (distance[index] < 0) {
+	        tab +=  "<tr><td width=150>" +spaceEvent[index].name + ":</td><td>" + spaceEvent[index].dateUTC + "</td><td width=200>" + ( new Date(spaceEvent[index].dateUTC+".000Z")).toLocaleString() + "</td><td width=250>ESEGUITA</td></tr>";
+	      } else {
+			tab += "<tr><td width=150>"  +spaceEvent[index].name + ":</td><td>" + spaceEvent[index].dateUTC + "</td><td width=200>" + ( new Date(spaceEvent[index].dateUTC+".000Z")).toLocaleString() + "</td><td width=250>" + days[index] + " giorni " + hours[index] + " ore "  + minutes[index] + " minuti " + seconds[index] + " secondi</td></tr>";
+		  }
+    	}
+		tab += "</table>";
+//console.log(tab);
+		document.getElementById("timers").innerHTML = tab;
+	}, 1000);
+}
+
+  </script>
+
+</body>
+</html>
