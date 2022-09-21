@@ -3,15 +3,15 @@
 <!--
 1.5.2 - (Work in progress)
 	Tolto bug di distanza errata mostrata in console
-	Tento di aggiungere label a raggi, per capire a cosa puntano anche se il bersaglio non Ë visibile (aggiungo "label")
-	>>>PerchË DART non si vede anche se in console appaiono messaggi corretti?
+	Tento di aggiungere label a raggi, per capire a cosa puntano anche se il bersaglio non √® visibile (aggiungo "label")
+	>>>Perch√® DART non si vede anche se in console appaiono messaggi corretti?
 1.5.1 - Corretti alcuni bug in tracciamento di frecce verso oggetti non ben definiti (senza nome, o senza distanza); soppresso tracciamento subpoint di hayabusa; aggiunti messaggi di debug.
 1.5.0 - Tolti puntatori al sole, corretta visualizzazione di tutti i raggi di tutte le antenne.
 1.4.0 - Sostituito Cors Anywhere con mio proxy
-1.3.0 - Sistemata gestione antenne DSN, cosÏ ora si puÚ vedere anche dov'Ë Osiris Rex.
+1.3.0 - Sistemata gestione antenne DSN, cos√¨ ora si pu√≤ vedere anche dov'√® Osiris Rex.
 1.2.0x - Aggiunta linea di giunzione tra hayabusa e centro della terra, per vedere su quale territorio sta volando Hayabusa; risolto bug di loinee non cancellate al refresh
 1.1.0 - Corretto bug distanza in prima tabella; implementata lettura realtime file eventi per haya+capsula.
-1.0.0 - Prima versione completa, ripulita e integrata con timers; manca ancora il marker con la posizione di Hayabusa, perchË bisogna trasformare
+1.0.0 - Prima versione completa, ripulita e integrata con timers; manca ancora il marker con la posizione di Hayabusa, perch√® bisogna trasformare
 	  - le coordinate da solari a terrestri.
 0.0.8 - Eliminate antenne che dovrebbero puntare sotto l'orizzonte per vedere H2; aggiunti dettagli in descrizione delle antenne.
 0.0.7 -
@@ -606,7 +606,7 @@ function retrieveURL(url) {
 	client.open('GET', prefix + encodeURIComponent(url));
 	client.responseType = 'text';
 	client.onload = function() {
-//console.log("Downloading completed", client.response);
+console.log("Downloading completed", client.response);
 		obj=JSON.parse(client.response);
 		document.getElementById("timeGen").innerHTML = obj.status.spacecraft.generatedAt;
 		document.getElementById("timeRec").innerHTML = obj.status.spacecraft.receivedAt;
