@@ -154,7 +154,11 @@ function drawLine(x1,y1,z1, x2, y2, z2, width, color,  dashed, targetName) {
 		    width: width,
 		    material: new Cesium.PolylineDashMaterialProperty({color: color}),
 			description : targetName,
-			label: targetName
+			  label: {
+			    text: targetName,
+			    font: "14px Helvetica",
+			    pixelOffset: new Cesium.Cartesian2(0.0, 20),
+			}
 		  }
 		});
 	} else {
@@ -168,7 +172,11 @@ function drawLine(x1,y1,z1, x2, y2, z2, width, color,  dashed, targetName) {
 			width: width,
 			material: new Cesium.PolylineArrowMaterialProperty(color),
 			description : targetName,
-			label: targetName
+			  label: {
+			    text: targetName,
+			    font: "14px Helvetica",
+			    pixelOffset: new Cesium.Cartesian2(0.0, 20),
+			}
 		  }
 		});
   }
