@@ -153,7 +153,11 @@ function drawLine(x1,y1,z1, x2, y2, z2, width, color,  dashed, targetName) {
 		    arcType: Cesium.ArcType.NONE   ,
 		    width: width,
 		    material: new Cesium.PolylineDashMaterialProperty({color: color}),
-			description : targetName,
+			description : {
+			    text: targetName,
+			    font: "14px Helvetica",
+			    pixelOffset: new Cesium.Cartesian2(0.0, 20),
+			},
 			  label: {
 			    text: targetName,
 			    font: "14px Helvetica",
@@ -171,7 +175,11 @@ function drawLine(x1,y1,z1, x2, y2, z2, width, color,  dashed, targetName) {
 			arcType: Cesium.ArcType.NONE   ,
 			width: width,
 			material: new Cesium.PolylineArrowMaterialProperty(color),
-			description : targetName,
+			description : {
+			    text: targetName,
+			    font: "14px Helvetica",
+			    pixelOffset: new Cesium.Cartesian2(0.0, 20),
+			},
 			  label: {
 			    text: targetName,
 			    font: "14px Helvetica",
