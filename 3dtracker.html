@@ -3,15 +3,15 @@
 <!--
 1.5.2 - (Work in progress)
 	Tolto bug di distanza errata mostrata in console
-	Tento di aggiungere label a raggi, per capire a cosa puntano anche se il bersaglio non Ã¨ visibile (aggiungo "label")
-	>>>PerchÃ¨ DART non si vede anche se in console appaiono messaggi corretti?
+	Tento di aggiungere label a raggi, per capire a cosa puntano anche se il bersaglio non è visibile (aggiungo "label")
+	>>>Perchè DART non si vede anche se in console appaiono messaggi corretti?
 1.5.1 - Corretti alcuni bug in tracciamento di frecce verso oggetti non ben definiti (senza nome, o senza distanza); soppresso tracciamento subpoint di hayabusa; aggiunti messaggi di debug.
 1.5.0 - Tolti puntatori al sole, corretta visualizzazione di tutti i raggi di tutte le antenne.
 1.4.0 - Sostituito Cors Anywhere con mio proxy
-1.3.0 - Sistemata gestione antenne DSN, cosÃ¬ ora si puÃ² vedere anche dov'Ã¨ Osiris Rex.
+1.3.0 - Sistemata gestione antenne DSN, così ora si può vedere anche dov'è Osiris Rex.
 1.2.0x - Aggiunta linea di giunzione tra hayabusa e centro della terra, per vedere su quale territorio sta volando Hayabusa; risolto bug di loinee non cancellate al refresh
 1.1.0 - Corretto bug distanza in prima tabella; implementata lettura realtime file eventi per haya+capsula.
-1.0.0 - Prima versione completa, ripulita e integrata con timers; manca ancora il marker con la posizione di Hayabusa, perchÃ¨ bisogna trasformare
+1.0.0 - Prima versione completa, ripulita e integrata con timers; manca ancora il marker con la posizione di Hayabusa, perchè bisogna trasformare
 	  - le coordinate da solari a terrestri.
 0.0.8 - Eliminate antenne che dovrebbero puntare sotto l'orizzonte per vedere H2; aggiunti dettagli in descrizione delle antenne.
 0.0.7 -
@@ -47,15 +47,16 @@ Da implementare:
   </center><br>
     <div id="test" name="test"><button id="btnRefresh" name="btnRefresh" onclick="update(null)">Refresh</button></div>
 	Lastest page update: <span id="refreshTime" name="refreshTime">-</span><br>
+<!-- (Legacy Hayabusa2 code)
 	Latest telemetries times:<br>
 	Generated: <span id="timeGen" name="timeGen"></span> - Received: <span id="timeRec" name="timeRec"></span> - Updated to Web: <span id="timeUpd" name="timeUpd"></span><br>
 	Latest pointing time: <span id="timePoint" name="timePoint">-</span><br>
 	Distances in light-seconds:  to: <span id="to" name="to">-</span>, from:  <span id="from" name="from">-</span>,  diff: <span id="diff" name="diff">-</span>, Dist: <span id="km" name="km">-</span>
+-->
   <div id="cesiumContainer" style="width: 1250px">
      <div class="toolbar-left" style="display: block;position: absolute; top: 0px;left: 0px;">
-<!--      <button id="btnHome" name="btnHome">Home</button>
-    <button id="btnDestination" name="btnDestination">Destination</button>
--->	</div>
+
+</div>
   </div>
   <br>
   <span id="dati" name="dati">--</span><br>
@@ -601,116 +602,118 @@ function retrieveDates() {
 
 function retrieveURL(url) {
 	var groupHeader = "<tr><td colspan=4><center>Station data</center></td><td colspan=5><center>Hayabusa 2 data</center></td><td colspan=2><center>Sun data</center></td></tr>";
+
 	var client = new XMLHttpRequest();
 	prefix = "https://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=" ;
+console.log("Full url:", prefix + url);
 	client.open('GET', prefix + encodeURIComponent(url));
 	client.responseType = 'text';
 	client.onload = function() {
+		if (client.response != "") { // Legacy code for Hayabusa 2 data
 console.log("Downloading completed", client.response);
-		obj=JSON.parse(client.response);
-		document.getElementById("timeGen").innerHTML = obj.status.spacecraft.generatedAt;
-		document.getElementById("timeRec").innerHTML = obj.status.spacecraft.receivedAt;
-		document.getElementById("timeUpd").innerHTML = obj.status.updatedAt;
-		document.getElementById("timePoint").innerHTML = obj.geometry[0].UTC;
-		dataText = "<table border=1>";
-		geometry = 0;
-		cicli++;
-		dataText += groupHeader +
-		"<tr><td>Station ID</td><td>Latitude (degrees)</td><td>Longitude (degrees)</td><td>Altitude (meters)</td>" +
-		"<td>Elevation (degrees)</td><td>Azimuth (degrees)</td><td>Distance (km)</td><td>Time delay from</td><td>Time delay to</td>" +
-		"<td>Elevation (degrees)</td><td>Azimuth (degrees)</td></tr>";
+			obj=JSON.parse(client.response);
+			document.getElementById("timeGen").innerHTML = obj.status.spacecraft.generatedAt;
+			document.getElementById("timeRec").innerHTML = obj.status.spacecraft.receivedAt;
+			document.getElementById("timeUpd").innerHTML = obj.status.updatedAt;
+			document.getElementById("timePoint").innerHTML = obj.geometry[0].UTC;
+			dataText = "<table border=1>";
+			geometry = 0;
+			cicli++;
+			dataText += groupHeader +
+			"<tr><td>Station ID</td><td>Latitude (degrees)</td><td>Longitude (degrees)</td><td>Altitude (meters)</td>" +
+			"<td>Elevation (degrees)</td><td>Azimuth (degrees)</td><td>Distance (km)</td><td>Time delay from</td><td>Time delay to</td>" +
+			"<td>Elevation (degrees)</td><td>Azimuth (degrees)</td></tr>";
 
-		for (var observer=0; observer < obj.geometry[0].obs.length; observer++) {
-			arrowType = "solid";
-			geometryObserver = obj.geometry[0].obs[observer];
-			dish = obj.geometry[0];
-			var EarthX = dish.earth.x * 1000;
-			var EarthY = dish.earth.y * 1000;
-			var EarthZ = dish.earth.z * 1000;
-			var Hayabusa2X = dish.hayabusa2.x * 1000;
-			var Hayabusa2Y = dish.hayabusa2.y * 1000;
-			var Hayabusa2Z = dish.hayabusa2.z * 1000;
-			var EarthHayabusaDistanceRaw = Math.sqrt(Math.pow(EarthX - Hayabusa2X,2) + Math.pow(EarthY - Hayabusa2Y,2) + Math.pow(EarthZ - Hayabusa2Z,2));
-			EarthHayabusaDistanceNoDecimals = EarthHayabusaDistanceRaw.toFixed(0)*1.0;
-			EarthHayabusaDistanceFinal = EarthHayabusaDistanceNoDecimals.toLocaleString();
+			for (var observer=0; observer < obj.geometry[0].obs.length; observer++) {
+				arrowType = "solid";
+				geometryObserver = obj.geometry[0].obs[observer];
+				dish = obj.geometry[0];
+				var EarthX = dish.earth.x * 1000;
+				var EarthY = dish.earth.y * 1000;
+				var EarthZ = dish.earth.z * 1000;
+				var Hayabusa2X = dish.hayabusa2.x * 1000;
+				var Hayabusa2Y = dish.hayabusa2.y * 1000;
+				var Hayabusa2Z = dish.hayabusa2.z * 1000;
+				var EarthHayabusaDistanceRaw = Math.sqrt(Math.pow(EarthX - Hayabusa2X,2) + Math.pow(EarthY - Hayabusa2Y,2) + Math.pow(EarthZ - Hayabusa2Z,2));
+				EarthHayabusaDistanceNoDecimals = EarthHayabusaDistanceRaw.toFixed(0)*1.0;
+				EarthHayabusaDistanceFinal = EarthHayabusaDistanceNoDecimals.toLocaleString();
 
-			hayabusaPosWrtEarthX = Hayabusa2X - EarthX;
-			hayabusaPosWrtEarthY = Hayabusa2Y - EarthY;
-			hayabusaPosWrtEarthZ = Hayabusa2Z - EarthZ;
-			hayabusa2PosWrtEarth = new Cesium.Cartesian3(hayabusaPosWrtEarthX,hayabusaPosWrtEarthY,hayabusaPosWrtEarthZ);
+				hayabusaPosWrtEarthX = Hayabusa2X - EarthX;
+				hayabusaPosWrtEarthY = Hayabusa2Y - EarthY;
+				hayabusaPosWrtEarthZ = Hayabusa2Z - EarthZ;
+				hayabusa2PosWrtEarth = new Cesium.Cartesian3(hayabusaPosWrtEarthX,hayabusaPosWrtEarthY,hayabusaPosWrtEarthZ);
 
-			var EarthSunDistanceRaw = Math.sqrt(Math.pow(EarthX,2) + Math.pow(EarthY,2) + Math.pow(EarthZ,2));
-			EarthSunDistanceNoDecimals = EarthSunDistanceRaw.toFixed(0)*1.0;
-			EarthSunDistanceFinal = EarthSunDistanceNoDecimals.toLocaleString();
-
-
-			addAntenna(geometryObserver.longitude,
-				geometryObserver.latitude,
-				geometryObserver.altitude,
-				geometryObserver.name,
-				geometryObserver.hayabusa2.alt,
-				geometryObserver.hayabusa2.azm,
-				geometryObserver.sun.alt,
-				geometryObserver.sun.azm,
-				arrowType,
-				EarthHayabusaDistanceNoDecimals,
-				EarthSunDistanceNoDecimals);
-
-//			drawSubPosition(geometryObserver.latitude, geometryObserver.longitude,  0, geometryObserver.hayabusa2.alt,geometryObserver.hayabusa2.azm, EarthHayabusaDistanceNoDecimals);
-
-			dataText += "<tr><td>"
-				+ geometryObserver.name + "</td><td>"
-				+ geometryObserver.latitude + "</td><td>"
-				+ geometryObserver.longitude + "</td><td>"
-				+ geometryObserver.altitude + "</td><td>"
-				+ geometryObserver.hayabusa2.alt + "</td><td>"
-				+ geometryObserver.hayabusa2.azm + "</td><td>"
-				+ ((EarthHayabusaDistanceNoDecimals/1000).toFixed(0)*1.0).toLocaleString() + "</td><td>"
-				+ geometryObserver.hayabusa2.delay_from + "</td><td>"
-				+ geometryObserver.hayabusa2.delay_to + "</td><td>"
-				+ geometryObserver.sun.alt + "</td><td>"
-				+ geometryObserver.sun.azm + "</td></tr>";
-		} // for
-
-		var to = geometryObserver.hayabusa2.delay_to;
-		var from = geometryObserver.hayabusa2.delay_from;
-		var diff = from-to;
-		var km = to * velocitaLuce / 1000; // meters
-		document.getElementById("to").innerHTML = to.toFixed(2) + "sec";
-		document.getElementById("from").innerHTML = from.toFixed(2) + "sec";
-		document.getElementById("diff").innerHTML = diff.toFixed(2) + "sec";
-		document.getElementById("km").innerHTML = (km.toFixed(0)*1.0).toLocaleString() + " km" ;
+				var EarthSunDistanceRaw = Math.sqrt(Math.pow(EarthX,2) + Math.pow(EarthY,2) + Math.pow(EarthZ,2));
+				EarthSunDistanceNoDecimals = EarthSunDistanceRaw.toFixed(0)*1.0;
+				EarthSunDistanceFinal = EarthSunDistanceNoDecimals.toLocaleString();
 
 
-		if (geometry < obj.geometry.length -1) {
-			dataText += "</table><br><br><table border=1";
-		} else {
-			dataText += "</table><br><br>";
+				addAntenna(geometryObserver.longitude,
+					geometryObserver.latitude,
+					geometryObserver.altitude,
+					geometryObserver.name,
+					geometryObserver.hayabusa2.alt,
+					geometryObserver.hayabusa2.azm,
+					geometryObserver.sun.alt,
+					geometryObserver.sun.azm,
+					arrowType,
+					EarthHayabusaDistanceNoDecimals,
+					EarthSunDistanceNoDecimals);
+
+	//			drawSubPosition(geometryObserver.latitude, geometryObserver.longitude,  0, geometryObserver.hayabusa2.alt,geometryObserver.hayabusa2.azm, EarthHayabusaDistanceNoDecimals);
+
+				dataText += "<tr><td>"
+					+ geometryObserver.name + "</td><td>"
+					+ geometryObserver.latitude + "</td><td>"
+					+ geometryObserver.longitude + "</td><td>"
+					+ geometryObserver.altitude + "</td><td>"
+					+ geometryObserver.hayabusa2.alt + "</td><td>"
+					+ geometryObserver.hayabusa2.azm + "</td><td>"
+					+ ((EarthHayabusaDistanceNoDecimals/1000).toFixed(0)*1.0).toLocaleString() + "</td><td>"
+					+ geometryObserver.hayabusa2.delay_from + "</td><td>"
+					+ geometryObserver.hayabusa2.delay_to + "</td><td>"
+					+ geometryObserver.sun.alt + "</td><td>"
+					+ geometryObserver.sun.azm + "</td></tr>";
+			} // for
+
+			var to = geometryObserver.hayabusa2.delay_to;
+			var from = geometryObserver.hayabusa2.delay_from;
+			var diff = from-to;
+			var km = to * velocitaLuce / 1000; // meters
+			document.getElementById("to").innerHTML = to.toFixed(2) + "sec";
+			document.getElementById("from").innerHTML = from.toFixed(2) + "sec";
+			document.getElementById("diff").innerHTML = diff.toFixed(2) + "sec";
+			document.getElementById("km").innerHTML = (km.toFixed(0)*1.0).toLocaleString() + " km" ;
+
+
+			if (geometry < obj.geometry.length -1) {
+				dataText += "</table><br><br><table border=1";
+			} else {
+				dataText += "</table><br><br>";
+			}
+
+
+			document.getElementById("dati").innerHTML = dataText;
+
+			// set clock
+			stationTime = obj.geometry[0].UTC;
+			spacecraftTime = obj.status.spacecraft.receivedAt;
+			a =  new Date(stationTime);
+			YYYY = a.getFullYear();
+			Mo = a.getMonth() + 1;
+			DD = a.getDate();
+			HH = a.getHours();
+			Mi = a.getMinutes();
+			myDate = YYYY + "-" + Mo + "-" + DD + " " + HH + ":" + Mi;
+			ISOdate = (new Date(myDate)).toISOString();
+			viewer.clock.currentTime = Cesium.JulianDate.fromIso8601(stationTime + ".000Z");
+
+			retrieveDates();
 		}
-
-
-		document.getElementById("dati").innerHTML = dataText;
-
-		// set clock
-		stationTime = obj.geometry[0].UTC;
-		spacecraftTime = obj.status.spacecraft.receivedAt;
-		a =  new Date(stationTime);
-		YYYY = a.getFullYear();
-		Mo = a.getMonth() + 1;
-		DD = a.getDate();
-		HH = a.getHours();
-		Mi = a.getMinutes();
-		myDate = YYYY + "-" + Mo + "-" + DD + " " + HH + ":" + Mi;
-		ISOdate = (new Date(myDate)).toISOString();
-		viewer.clock.currentTime = Cesium.JulianDate.fromIso8601(stationTime + ".000Z");
-
-		retrieveDates();
-
 
 		// Aggiunge antenne DSN:
 		xhr = new XMLHttpRequest();
 		xhr.onreadystatechange = DSN_XHRhandler; // >>> Chiama la routine che visualizza le antenne in base ai dati scaricati
-		// "https://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=" + encodeURIComponent(fullURL)
 		xhr.open("GET", "https://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=" + encodeURIComponent("https://eyes.nasa.gov/dsn/data/dsn.xml?r=321076546"), true);
 		xhr.send(null);
 
@@ -745,6 +748,7 @@ console.log("Downloading completed", client.response);
 		console.log("ECCEZIONE!");
 		console.log(e);
 	}
+
 }
 
 function DSN_XHRhandler() {
