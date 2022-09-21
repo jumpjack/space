@@ -94,7 +94,7 @@ Date di riferimento estratte AUTOMATICAMENTE da <a href="https://www.hayabusa2.j
       terrainProvider: Cesium.createWorldTerrain()
     });
     viewer.scene.globe.enableLighting = true;
-	viewer.camera.frustum.far = 1000000000000; // Maximum distance of visible objects, in meters
+	viewer.camera.frustum.far = 1000000000000000; // Maximum distance of visible objects, in meters
 
     // Add Cesium OSM Buildings, a global 3D buildings layer.
     const buildingTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());
@@ -393,7 +393,7 @@ console.log("Darwing arrows to Hayabusa 2");
 function addDSN(originLon, originLat, originHeight, name, elev, az, targetName, targetDistance) {
   var origin = Cesium.Cartesian3.fromDegrees(originLon, originLat, originHeight); //lon, lat,  alt (meters)
 	stationCount++;
-	if (stationCount < 2) { // Add stations only first time
+/*	if (stationCount < 2) { // Add stations only first time
 		// Station marker:
 		entDSNMarker[stationCount] = viewer.entities.add({
 		  position: origin,
@@ -402,14 +402,14 @@ function addDSN(originLon, originLat, originHeight, name, elev, az, targetName, 
 		      pixelSize: 18,
 		},
 		  label: {
-		    //text: name,
-		    //font: "14px Helvetica",
-		    //pixelOffset: new Cesium.Cartesian2(0.0, 20),
+		    text: name,
+		    font: "14px Helvetica",
+		    pixelOffset: new Cesium.Cartesian2(0.0, 20),
 		},
-		  //description : name
+		  description : name
 		});
 
-	/*	// Station label:
+		// Station label:
 		entDSNLabel[stationCount] = viewer.entities.add({
 		  position:  Cesium.Cartesian3.fromDegrees(originLon,originLat,200000),
 		  point: {
@@ -423,8 +423,8 @@ function addDSN(originLon, originLat, originHeight, name, elev, az, targetName, 
 		},
 		  description : name
 		});
-	*/
-	}
+
+	}*/
 	if (targetDistance * 1.0 > 100) {
 console.log("        Valid DSN data for station " + name + ", pointing to " + targetName + ", distant " + (((targetDistance*1.0/1000).toFixed(0)*1.0).toLocaleString()) + "km" );
 		arrowFromTo(originLat, originLon, originHeight, elev, az, targetDistance, 10, Cesium.Color.GREY, true, "Target: " + targetName + "\ndist: " + (((targetDistance*1.0/1000).toFixed(0)*1.0).toLocaleString()) + " km");
@@ -612,6 +612,7 @@ console.log("Full url:", prefix + url);
 	client.onload = function() {
 		if (client.response != "") { // Legacy code for Hayabusa 2 data
 console.log("Downloading completed", client.response);
+/*
 			obj=JSON.parse(client.response);
 			document.getElementById("timeGen").innerHTML = obj.status.spacecraft.generatedAt;
 			document.getElementById("timeRec").innerHTML = obj.status.spacecraft.receivedAt;
@@ -710,6 +711,8 @@ console.log("Downloading completed", client.response);
 			viewer.clock.currentTime = Cesium.JulianDate.fromIso8601(stationTime + ".000Z");
 
 			retrieveDates();
+
+*/
 		}
 
 		// Aggiunge antenne DSN:
