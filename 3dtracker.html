@@ -33,8 +33,8 @@ Da implementare:
   <meta charset="utf-8">
   <!-- Include the CesiumJS JavaScript and CSS files -->
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.75/Build/Cesium/Cesium.js"></script>
-  <script src="http://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=http%3A%2F%2Fwin98.altervista.org%2Fspace%2Fexploration%2F3d%2Fjs%2Fxml2jsobj.js")></script>
-  <script src="http://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=http%3A%2F%2Fwin98.altervista.org%2Fspace%2Fexploration%2F3d%2Fjs%2FDSN.js")></script>
+  <script src="https://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=http%3A%2F%2Fwin98.altervista.org%2Fspace%2Fexploration%2F3d%2Fjs%2Fxml2jsobj.js")></script>
+  <script src="https://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=http%3A%2F%2Fwin98.altervista.org%2Fspace%2Fexploration%2F3d%2Fjs%2FDSN.js")></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.75/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
 </head>
 <body style="background-color:#000000; color:white">
@@ -42,7 +42,7 @@ Da implementare:
   <center><big><big><big>Deep Space Network</big></big></big><br>
   3d viewer<br>
   <small><i>by Luca Cassioli</i></small><br>
-  V.1.5.1 - 30/08/2021<br>
+  V.1.5.2beta - sep/2022<br>
   Made with <a href="https://sandcastle.cesium.com/?src=Points.html">CesiumJS</a><br>
   </center><br>
     <div id="test" name="test"><button id="btnRefresh" name="btnRefresh" onclick="update(null)">Refresh</button></div>
@@ -60,7 +60,7 @@ Da implementare:
   <br>
   <span id="dati" name="dati">--</span><br>
   NASA Deep Space Network status page: <a href="https://eyes.nasa.gov/dsn/dsn.html">link</a><br>
-  Raw Hayabusa 2 data: <a href="http://jsonviewer.stack.hu/#http://haya2now.jp/data/data.json">link</a><br>
+  Raw Hayabusa 2 data: <a href="https://jsonviewer.stack.hu/#https://haya2now.jp/data/data.json">link</a><br>
   <br>
   <br>
 <hr>
@@ -74,7 +74,7 @@ Ora attuale ialiana: <span id="now" name="now" style="color:yellow"></span><br> 
 <td style="background-color:#888888">
 Date di riferimento estratte AUTOMATICAMENTE da <a href="https://www.hayabusa2.jaxa.jp/hy2sc4/data/events.json">questo file</a><br>
 <a href="https://www.hayabusa2.jaxa.jp/hy2sc4/">Pagina originale JAXA</a><br>
-<a href="http://win98.altervista.org/hayabusa2/hayabusa2-tracker.html?xaxis=4&yaxis1=30&yaxis2=33&separator=%5Ct&first=7750&yzoom=10000000">Tracker 2d</a><br>
+<a href="https://win98.altervista.org/hayabusa2/hayabusa2-tracker.html?xaxis=4&yaxis1=30&yaxis2=33&separator=%5Ct&first=7750&yzoom=10000000">Tracker 2d</a><br>
 </td>
 </tr>
 </table>
@@ -321,7 +321,7 @@ function addAntenna(originLon, originLat, originHeight, name, elev, az, sunElev,
 		    font: "24px Helvetica",
 		    pixelOffset: new Cesium.Cartesian2(0.0, 20),
 		},
-		  description : "<a href='http://www.google.com'>" + name + "</a><br>Hayabusa 2 alt:" + elev + horizonStatus + "<br>Hayabusa 2 az:" + az + "<br>Sun alt: "+ sunElev + sunStatus + "<br>Sun az:" + sunAz
+		  description : "<a href='https://www.google.com'>" + name + "</a><br>Hayabusa 2 alt:" + elev + horizonStatus + "<br>Hayabusa 2 az:" + az + "<br>Sun alt: "+ sunElev + sunStatus + "<br>Sun az:" + sunAz
 		});
 	}
 
@@ -528,7 +528,7 @@ function main() {
 		viewer.entities.remove(entLine[lineDelete]);
 	}
 	lineCount = 0;
-	retrieveURL("http://haya2now.jp/data/data.json");
+	retrieveURL("https://haya2now.jp/data/data.json");
 }
 
 
@@ -559,7 +559,7 @@ function update(clock) {
 
 function retrieveDates() {
 		var clientDates = new XMLHttpRequest();
-		var url = "http://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=" + encodeURIComponent("https://www.hayabusa2.jaxa.jp/hy2sc4/data/events.json");
+		var url = "https://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=" + encodeURIComponent("https://www.hayabusa2.jaxa.jp/hy2sc4/data/events.json");
 		clientDates.open('GET', url);
 		clientDates.responseType = 'text';
 		clientDates.onload = function() {
@@ -602,7 +602,7 @@ function retrieveDates() {
 function retrieveURL(url) {
 	var groupHeader = "<tr><td colspan=4><center>Station data</center></td><td colspan=5><center>Hayabusa 2 data</center></td><td colspan=2><center>Sun data</center></td></tr>";
 	var client = new XMLHttpRequest();
-	prefix = "http://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=" ; 
+	prefix = "https://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=" ;
 	client.open('GET', prefix + encodeURIComponent(url));
 	client.responseType = 'text';
 	client.onload = function() {
@@ -710,8 +710,8 @@ function retrieveURL(url) {
 		// Aggiunge antenne DSN:
 		xhr = new XMLHttpRequest();
 		xhr.onreadystatechange = DSN_XHRhandler; // >>> Chiama la routine che visualizza le antenne in base ai dati scaricati
-		// "http://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=" + encodeURIComponent(fullURL)
-		xhr.open("GET", "http://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=" + encodeURIComponent("https://eyes.nasa.gov/dsn/data/dsn.xml?r=321076546"), true);
+		// "https://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=" + encodeURIComponent(fullURL)
+		xhr.open("GET", "https://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=" + encodeURIComponent("https://eyes.nasa.gov/dsn/data/dsn.xml?r=321076546"), true);
 		xhr.send(null);
 
 	}; // client onload
