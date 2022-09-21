@@ -393,7 +393,7 @@ console.log("Darwing arrows to Hayabusa 2");
 function addDSN(originLon, originLat, originHeight, name, elev, az, targetName, targetDistance) {
   var origin = Cesium.Cartesian3.fromDegrees(originLon, originLat, originHeight); //lon, lat,  alt (meters)
 	stationCount++;
-/*	if (stationCount < 2) { // Add stations only first time
+//	if (stationCount < 2) { // Add stations only first time
 		// Station marker:
 		entDSNMarker[stationCount] = viewer.entities.add({
 		  position: origin,
@@ -424,7 +424,7 @@ function addDSN(originLon, originLat, originHeight, name, elev, az, targetName, 
 		  description : name
 		});
 
-	}*/
+//	}
 	if (targetDistance * 1.0 > 100) {
 console.log("        Valid DSN data for station " + name + ", pointing to " + targetName + ", distant " + (((targetDistance*1.0/1000).toFixed(0)*1.0).toLocaleString()) + "km" );
 		arrowFromTo(originLat, originLon, originHeight, elev, az, targetDistance, 10, Cesium.Color.GREY, true, "Target: " + targetName + "\ndist: " + (((targetDistance*1.0/1000).toFixed(0)*1.0).toLocaleString()) + " km");
