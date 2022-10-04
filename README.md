@@ -1,6 +1,6 @@
 Collection of space-related sources
 
-- **wandering planets**: shows how planets, moon and sun move in the sky at specified time intervals; inspired by [this post](https://www.facebook.com/photo/?fbid=1032376000867578&set=a.1029652147806630) on facebook
+- **[wandering planets](https://jumpjack.github.io/space/wandering-planets.html)**: shows how planets, moon and sun move in the sky at specified time intervals; inspired by [this post](https://www.facebook.com/photo/?fbid=1032376000867578&set=a.1029652147806630) on facebook
 
 Moon path for period  **september 2022- november 2022** at 1481 minutes intervals from 42N, 12E:
 
