@@ -1,0 +1,306 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<!--
+Draws planets, moon and sun trajectory positions at specified intervals. Inspired by this post:
+0.3.0 - First public version - 2022-10-04
+
+-->
+  <head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="PSPad editor, www.pspad.com">
+  <title>Wandering planets</title>
+	<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.1/dist/jquery.min.js"></script>
+  </head>
+  <body>
+	<!--<script src="https://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=https://raw.githubusercontent.com/slowe/VirtualSky/gh-pages/highlight.pack.js" type="text/javascript"></script>-->
+	<script src="https://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=https://raw.githubusercontent.com/slowe/VirtualSky/gh-pages/stuquery.js" type="text/javascript"></script>
+	<script src="https://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=https://raw.githubusercontent.com/slowe/VirtualSky/gh-pages/virtualsky.min.js" type="text/javascript"></script>
+
+<center>
+<big><big><big><big>Wandering planets</big></big></big></big><br>
+v.0.3.0 - 2022-10-04<br>
+Source code: <a href="https://github.com/jumpjack/space/blob/main/wandering-planets.html">link</a><br></center>
+<br>
+<div id="starmap" style="width:800px;height:400px;"></div>
+<br>
+North latitude: <input type=text id = "inpLat" name="inpLat" value = 42 onchange="planetarium.setLatitude(this.value); planetarium.drawImmediate();"><br>
+East longitude: <input type=text id = "inpLon" name="inpLon" value = 12 onchange="planetarium.setLongitude(this.value); planetarium.drawImmediate();"><br>
+<input type = "checkbox" id = "chkAltAz" name="chkAltAz"  checked = true onchange="planetarium.grid.az = this.checked; planetarium.drawImmediate()">Alt/Az grid<br>
+<input type = "checkbox" id = "chkRaDec" name="chkRaDec"  checked = true onchange="planetarium.grid.eq = this.checked; planetarium.drawImmediate()">RA/Dec grid<br>
+<input type = "checkbox" id = "chkConst" name="chkConst"  checked = true onchange="planetarium.constellation.lines = this.checked; planetarium.constellation.names = this.checked; planetarium.drawImmediate()">Constellations<br>
+<br>
+Custom timestep in minutes: <input type=text id="timeinterval" name="timeinterval" value = 1481>
+<button onclick="timeinterval.value=1440;">Earth day</button>
+<button onclick="timeinterval.value=1481;">Moon day</button>
+<button onclick="timeinterval.value=28*1440;">28 d</button>
+<button onclick="timeinterval.value=30*1440;">30 d</button>
+<button onclick="timeinterval.value=31*1440;">31 d</button>
+<button onclick="timeinterval.value=365*1440;">year</button>
+
+<br>
+Click on the map and press "&lt;" and "&gt;" to decrease/increse by one timestep.<br>
+<li>-/+ 1 hour: ./:<br></li>
+<li>-/+ 1 day: -/+<br></li>
+<li>-/+ custom: &lt;/&gt;<br></li>
+<li>Help: ?</li>
+<b>NOTE: mouse cursor must be inside the image for keyboard shortcuts to be active</b><br>
+<span id = "planetsCheckboxes" name="planetsCheckboxes">
+<input type = "checkbox" id = "chkSun" name="chkSun" checked = true>Sun <br>
+<input type = "checkbox" id = "chkMoon" name="chkMoon"  checked = true>Moon <br>
+</span>
+<button onclick="startTrailsMinus()">Play-</button><button onclick="startTrailsPlus()">Play+</button><button onclick="stopTrails()">Stop</button><br>
+<button onclick="clearTrails()">Clear trails</button><br>
+
+	<script>
+        var planetarium = S.virtualsky({
+                id: 'starmap',
+                projection: 'stereo',
+                keyboard: true,
+                mouse: true,
+                az: 180,
+                meridian: true,
+                latitude: 42,
+                longitude: 12,
+                clock: new Date("2022-10-03 21:30"),
+                gridlines_gal: true,
+                constellations: true,
+				callback : {
+					cursor : cursor,
+                    mouseenter : keyboardOk,
+					mouseout: keyboardWarning
+				},
+                showposition:true,
+                ground: true, // show horizon,
+                gridlines_az: true, // Alt/az
+          		gridlines_eq: true, // RA/Dec
+                gridlines_gal: false // Galactic RA/dec
+ 		});
+
+
+		planetarium.registerKey('+',function(){ this.setClock(86400).calendarUpdate(); },'addday');
+		planetarium.registerKey('.',function(){ this.setClock(-3600).calendarUpdate(); },'hour_minus');
+		planetarium.registerKey(':',function(){ this.setClock(3600).calendarUpdate(); },'hour_plus');
+		planetarium.registerKey('<',function(){ myClockUpdater(-1) },'moon_minus');
+		planetarium.registerKey('>',function(){ myClockUpdater(1) },'moon_plus');
+
+		planetarium.az_off=90; planetarium.draw(); // point to West  (0 is south)
+		prevAz = 90;
+        planetarium.changeMagnitude(1000);
+        planetarium.meridian=false;
+
+
+		moonCurve = [];
+		sunCurve = [];
+		myobj = [];
+		myCurve = [];
+		chk = [];
+		trailsReady = false;
+
+function startTrailsPlus() {
+	try {
+		clearInterval(myInterval);
+	} catch (e) {
+		console.log("no interval to clear")
+	}
+	myInterval = setInterval(myClockUpdater,200,1);
+}
+
+function startTrailsMinus() {
+	try {
+		clearInterval(myInterval);
+	} catch (e) {
+		console.log("no interval to clear")
+	}
+	myInterval = setInterval(myClockUpdater,200,-1);
+}
+
+function stopTrails() {
+	try {
+		clearInterval(myInterval);
+	} catch (e) {
+		console.log("no interval to clear")
+	}
+}
+
+
+
+function keyboardWarning() {
+	if (planetarium) {
+		planetarium.drawText("Keyboard DISABLED",10,100)
+	}
+}
+
+function keyboardOk() {
+	if (planetarium) {
+		planetarium.drawText("Keyboard enabled",10,100)
+	}
+}
+
+function testami(a,b,c) {
+	console.log(">>>", planetarium.planets);
+	console.log("----", a,b,c);
+	initTrails();
+}
+
+
+
+function myClockUpdater(t) {
+//console.log(planetarium.planets);
+	if (planetarium.planets) {
+		if (!trailsReady) {
+			initTrails()
+			return
+		}
+	} else {
+		console.log("Still loading...");
+		return
+	};
+
+	if (prevAz != planetarium.az_off) {
+console.log(prevAz , planetarium.az_off);
+		clearTrails(); // Clear trails if view is changed
+        prevAz = planetarium.az_off
+	}
+
+	if (chkMoon.checked) {
+		if (planetarium.lookup.moon) {
+	        myMoon = planetarium.radec2xy(planetarium.lookup.moon[0].ra, planetarium.lookup.moon[0].dec);
+			moonCurve.push({x: myMoon.x, y : myMoon.y});
+		}
+	}
+
+	if (chkSun.checked) {
+		if (planetarium.lookup.sun) {
+	        mySun = planetarium.radec2xy(planetarium.lookup.sun[0].ra, planetarium.lookup.sun[0].dec);
+			sunCurve.push({x: mySun.x, y : mySun.y});
+		}
+	}
+
+	for (var planetIndex = 0; planetIndex < planetarium.planets.length ; planetIndex++) {
+		if (planetarium.lookup.planet[planetIndex]) { 
+			currentPlanet = planetarium.lookup.planet[planetIndex];
+			planetName = currentPlanet.label;
+			if (chk[planetName].checked) {
+		        myobj[planetName] = planetarium.radec2xy(currentPlanet.ra, currentPlanet.dec);
+				myCurve[planetName].push({x: myobj[planetName].x, y : myobj[planetName].y});
+			}
+		}
+	};
+
+	planetarium.setClock(document.getElementById("timeinterval").value*t*60*1.0).calendarUpdate();
+
+	planetarium.pointers=[];
+
+	if (chkMoon.checked) {
+	    moonCurve.forEach((moonXY) => {
+			moonRaDec = planetarium.xy2radec(moonXY.x, moonXY.y);
+	        planetarium.addPointer({
+	                'ra': moonRaDec.ra*180/3.14,
+	                'dec': moonRaDec.dec*180/3.14,
+					'label' : " ",
+	                'colour':'rgb(255,255,255)',
+	                //'img':' ',
+	                'url':' ',
+	                'credit':' ',
+					'html' : " "
+			});
+		});
+	}
+
+
+	if (chkSun.checked) {
+	    sunCurve.forEach((sunXY) => {
+			sunRaDec = planetarium.xy2radec(sunXY.x, sunXY.y);
+	        planetarium.addPointer({
+	                'ra': sunRaDec.ra*180/3.14,
+	                'dec': sunRaDec.dec*180/3.14,
+					'label' : " ",
+	                'colour':'rgb(255,255,0)',
+	                //'img':' ',
+	                'url':' ',
+	                'credit':' ',
+					'html' : " "
+			});
+		});
+	}
+
+
+
+	for (var planetIndex = 0; planetIndex < planetarium.planets.length ; planetIndex++) {
+			planetName = planetarium.lang.planets[planetarium.planets[planetIndex][0]];
+			if (chk[planetName].checked) {
+			    myCurve[planetName].forEach((objXY) => {
+					objRaDec = planetarium.xy2radec(objXY.x, objXY.y);
+			        planetarium.addPointer({
+			                'ra': objRaDec.ra*180/3.14,
+			                'dec': objRaDec.dec*180/3.14,
+							'label' : ' ',// planetName,
+			                'colour': planetarium.planets[planetIndex][1],
+			                'url':' ',
+			                'credit':' ',
+							'html' : " "
+					});
+				});
+			}
+	};
+
+
+
+	planetarium.drawImmediate()
+}
+
+
+function initTrails() {
+
+	console.log("planetarium.planets", planetarium.planets);
+
+	// planetarium.planets: short label, color, orbit
+	// planetarium.lookup.planet: rad, dec, long label
+
+	for (var planetIndex = 0; planetIndex < planetarium.planets.length ; planetIndex++) {
+        myPlanet =  planetarium.lookup.planet[planetIndex];
+		var name = myPlanet.label;
+        myCurve[name] = []; // Will contain xy coordinates of each planet
+
+		// Create one checkbox per planet, with label and carriage return:
+		chk[name] = document.createElement("input");
+		chk[name].type = "checkbox";
+		//chk[name].setAttribute("checked");
+		chk[name].setAttribute("id", name);
+		chk[name].setAttribute("name", name);
+		chk[name].setAttribute("innerHTML", name);
+		chk[name].value = name;
+		var label = document.createElement('label')
+	    label.htmlFor = name;
+	    label.appendChild(document.createTextNode(name));
+        var br = document.createElement('br');
+		PP = document.getElementById("planetsCheckboxes");
+		PP.appendChild(chk[name]);
+		PP.appendChild(label);
+		PP.appendChild(br);
+	};
+    trailsReady = true;
+}
+
+function clearTrails() {
+	moonCurve = [];
+	sunCurve = [];
+	for (var planetIndex = 0; planetIndex < planetarium.planets.length ; planetIndex++) {
+        myPlanet =  planetarium.lookup.planet[planetIndex];
+		var name = myPlanet.label;
+        myCurve[name] = []; // Will contain xy coordinates of each planet
+	}
+	planetarium.pointers = [];
+	planetarium.drawImmediate();
+}
+
+function cursor(a,b,c) {
+	if (!planetarium.checkLoaded()) return -1;
+    planetarium.drawImmediate();
+	nearest = planetarium.nearestObject(a.x,a.y);
+	planetarium.drawText("RA: " + a.ra.toFixed(2) + ", dec: " + a.dec.toFixed(2) + " - " + nearest.label + " (" + nearest.type + ")" + " - Proj: " + planetarium.projection.title,200,10)
+}
+
+</script defer>
+  </body>
+</html>
