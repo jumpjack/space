@@ -1,10 +1,8 @@
 <html><!--
+v.5.2.0
+ - No more working at page opening: start/end time does not support anymore hour:min using my proxy (???), hence removed hour+min from user input (probably causing lot of new bugs...)
+ - Horizons output slightly changed: removed one blank before dashes delimiting the trajectory files, preventing script from properly extracting last available dates (fixed)
 
-v.5.2.0test
- - la chiamata all'API non funziona piu', sistemare
- - test url : ?orbiter=-98&center=@499&start=2018-9-26%2013:00&stop=2022-9-27%2012:00&step=30d
- 
- 
 v. 5.1.0:
  - Sistemato autorange grafico 2d
 
@@ -26,7 +24,7 @@ v. 4.12.0:
 
 v. 4.11.1 - Sistemato bug di bodyname
 v. 4.11.0 - Implementato mio sistema CORS
-v. 4.10.0 - Implementato timestep senza unitÃ  di misura; aggiunte varie sonde a quelle riconosciute; risolto bug di raggio specificato dall'utente non effettivamente usto.
+v. 4.10.0 - Implementato timestep senza unità di misura; aggiunte varie sonde a quelle riconosciute; risolto bug di raggio specificato dall'utente non effettivamente usto.
 			   Aggiunti link precompilati per vari EDL su Marte.
 v. 4.9.0 - Ottimizzate etichette 3d, messo autozoom 2d, corretto bug di altezza non disponibile se raggio non disponibile.
 v. 4.8.0 - Eliminati tooltip di hovering per sfera pianeta; aggiunto indicatore di posizione nell'array in tooltip traccia 3d; eliminati pulsanti zoom2d.
@@ -34,19 +32,19 @@ v. 4.7.2 - Inizio ad aggiungere tracciamento di traccia aggiuntiva tramite varia
 v. 4.7.1 - Risolto bug di timestep di url non mostrato in casella; risolto bug di mancanza marker posizione odierna in 3d e 2d
 // Da fare:
 // gestione di qualunque messaggio di errore della NASA, non solo alcuni
-// aggiungere come textbox tutti i parametri giÃ  possibili in url
-// aggiungere possibilitÃ  di tracce multiple da URL gia noti (da copiare in textbox)
+// aggiungere come textbox tutti i parametri già possibili in url
+// aggiungere possibilità di tracce multiple da URL gia noti (da copiare in textbox)
 
 v.4.7  - Aggiunto zoom 3d (anche da url; aggiungere pulsante/slider)
 v. 4.6 - Aggiungo tabella copiabile direttamente in excel italiano; aggiunte funzioni per zoom 3d manuale (per ora non accessibili a utente9
 v.4.5	Aggiunta mesh di corpo centrale sferico; corretto bug di sole non supportato come centro di rotazione; **hayabusa non funziona rispetto a ryugu*** 	
 v.4.4
 Aggiunto supporto per data inizio, data fine e timestep in URL (start,stop,step)
-Reso piÃ¹ robusto algoritmo di ricerca delle date disponibili (il file di input cambia formato a piacere....)
+Reso più robusto algoritmo di ricerca delle date disponibili (il file di input cambia formato a piacere....)
 v. 4.3 - Forse scritto algoritmo valido per estrarre date disponibili da qualsiasi file...
 v. 4.2 - Aggiungo link per "corsa a Marte": "Hope" degli Emirati Arabi, "Tianwen-1" (Giappone) e "Perseverance+Ingenuity" (USA)
 v. 4.1 - Corretto bug stringa titolo per oggetti non noti, e bug di usare sempre Marte @499; separate date-dati e date-grafico.
-V. 4.0 - Rivista completamente gestione parametri; aggiunta possibilitÃ  di specifiare punto su corpo celeste
+V. 4.0 - Rivista completamente gestione parametri; aggiunta possibilità di specifiare punto su corpo celeste
 V. 3.2 - Corretto bug che impediva tracciamento di oggetti non in archivio ma presenti su NASA Horizons
 V. 3.1 - Corretto bug di mancata assegnazione raggio corrispondente a corpo celeste selezionato (bodyRadius)
 V. 3.0 - Versione universale
@@ -57,8 +55,8 @@ V. 1.1 - 2019-08-23:
          Grafico 2d rispetto al suolo invece che rispetto al centro di grravita'.
 		 Aggiunto pallino posizione in grafico 2d.
 		 Aggiunta etichetta mancante in pallino posizione odierna.
-		 Data iniziale ora Ã¨ quella odierna.
-		 Aggiunta possibilitÃ  di specificare time-step.
+		 Data iniziale ora è quella odierna.
+		 Aggiunta possibilità di specificare time-step.
 V. 1.0 - 2019-08-22 - Derivata da 2.0 Osiris; plot.ly scaricato da remoto
 -->
 <head>
@@ -82,16 +80,16 @@ V. 1.0 - 2019-08-22 - Derivata da 2.0 Osiris; plot.ly scaricato da remoto
 	markerAsterisks = "\n*******************************************************************************";
 	marker3 = "------";
 	markerDateMAXLength = "-----------------"; // yyyy/mm/dd hh:mm  Longer sequence of dashes SHOULD mark length of filename length
-	markerFileNameFieldLength =  "\n  " + markerDateMAXLength; //After new line
+	markerFileNameFieldLength =  "\n " + markerDateMAXLength; //After new line
 	MAXLEN = 80;
     MAX_TIMESTEPS = 10000; // Too many timesteps would result in too long file to download
 	MSperMinute = 60000; // 
     TODAY_VISIBLE = false;
 	//BASE_HORIZONS_URL = "https://ssd.jpl.nasa.gov/horizons_batch.cgi?batch=1";
-	BASE_HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api?format=text"; // new api september 2021
+	BASE_HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api?format=text"; // new api setp 2021
 	minDist = 1/0;
 	maxDist = -1;
-	LOCAL_PROXY = "https://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=";
+	LOCAL_PROXY = "http://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=";
     finalURL = "";
     intervalPlotIndex = 0; // DEBUG - data index to plot dynamically inside setInterval
     intervalPlot = null;
@@ -208,10 +206,10 @@ V. 1.0 - 2019-08-22 - Derivata da 2.0 Osiris; plot.ly scaricato da remoto
 	progressStatusArray = ["-", "\\", "|", "/", "-", "\\", "|", "/"];
 	PROGRESS_SYMBOLS_COUNT = 8;
 
-	START_DATE_data = '2000-00-00 00:00';
-	END_DATE_data = '2000-00-00 00:00';
-	START_DATE_chart = '2000-00-00 00:00';
-	END_DATE_chart = '2000-00-00 00:00';
+	START_DATE_data = '2000-00-00';
+	END_DATE_data = '2000-00-00';
+	START_DATE_chart = '2000-00-00';
+	END_DATE_chart = '2000-00-00';
 
 
 	ERR_MISSING_PARAM_str= "[missing param in URL]";
@@ -314,7 +312,7 @@ console.log("FOUND:"+paramOrbiterId + "=" +orbiterIDs[index].name);
 			bodyID = paramBodyId;     		// Significative
 			bodyName = paramBodyName; 		// Accessory
 		  	bodyRadius = paramBodyRadius*1; // Accessory
-			appendCoords = "&COORD_TYPE=%27GEODETIC%27&SITE_COORD=%27" + paramSiteLon + "," +  paramSiteLat + "," +  paramSiteAlt + "%27";
+			appendCoords = "&COORD_TYPE='GEODETIC'&SITE_COORD='" + paramSiteLon + "," +  paramSiteLat + "," +  paramSiteAlt + "'";
 console.log("CUSTOM SITE: " + appendCoords);
 		} else {
 		/////// Calcoli rispetto a centro del corpo
@@ -544,8 +542,8 @@ console.log(orbiterID);
  	if ( ((bodyID == "") && (orbiterID =="")) || (showHelp == true)) {
 console.log("BODY o CENTER non definito."); 	
 		showHelp = false;
-		fullURL = BASE_HORIZONS_URL + "&COMMAND=%27*%27&CENTER=%27@%27"; // Download list of bodies
-		finalURL = LOCAL_PROXY +  encodeURIComponent(fullURL);
+		fullURL =  "&COMMAND='*'&CENTER='@*'"; // Download list of bodies
+		finalURL = LOCAL_PROXY + BASE_HORIZONS_URL +   encodeURIComponent(fullURL);
 		var clientMissingData = new XMLHttpRequest();
 		clientMissingData.open('GET',  finalURL);
 
@@ -569,25 +567,25 @@ console.log("### PRELOAD 001send");
 		clientMissingData.send(); // Async connection to data server.
 	} else { // BODY e ORBITER specificati, ok:
 		showHelp = false;
-		fullURL = BASE_HORIZONS_URL;  
-		fullURL += "&COMMAND=%27" + orbiterID + "%27"; 
-		fullURL += "&CENTER=%27" + bodyID + "%27"; 
-		fullURL += "&START_TIME=%270000-00-00 00:00%27"; // Dummy dates just to retrieve file header containing real dates
-		fullURL += "&STOP_TIME=%270000-00-00 00:00%27";
-		fullURL += "&STEP_SIZE=%271 h%27";
-		fullURL += "&MAKE_EPHEM=%27YES%27";
-		fullURL += "&TABLE_TYPE=%27VECTORS%27";
-		fullURL += "&OUT_UNITS=%27KM-S%27";
-		fullURL += "&REF_SYSTEM=%27J2000%27";
-		fullURL += "&VEC_LABELS=%27YES%27";
-		fullURL += "&CSV_FORMAT=%27YES%27";
-		fullURL += "&OBJ_DATA=%27YES%27";
-		fullURL += "&VEC_TABLE=%273%27";
+		fullURL = ""; // BASE_HORIZONS_URL;  //"https://ssd.jpl.nasa.gov/horizons_batch.cgi?batch=1";
+		fullURL += "&MAKE_EPHEM='YES'";
+		fullURL += "&TABLE_TYPE='VECTORS'";
+		fullURL += "&OUT_UNITS='KM-S'";
+		fullURL += "&REF_SYSTEM='J2000'";
+		fullURL += "&VEC_LABELS='YES'";
+		fullURL += "&CSV_FORMAT='YES'";
+		fullURL += "&OBJ_DATA='YES'";
+		//fullURL += "&VEC_TABLE='3'";
+		//fullURL += "&STEP_SIZE='1 h'";
+		//fullURL += "&START_TIME='0000-00-00 00:00'"; // Dummy dates just to retrieve file header containing real dates
+		//fullURL += "&STOP_TIME='0000-00-00 00:00'";
+		fullURL += "&COMMAND='" + orbiterID + "'"; // -152 = Chandrayaan2
+		fullURL += "&CENTER='" + bodyID + "'"; // 301 = Moon
 		document.getElementById("status").innerHTML = "Checking available dates for " + orbiterID + "(" + orbiterName + ") around " +  bodyID + "(" + bodyName + ")...";
-		document.getElementById("lnkResults").innerHTML = '<a href="' +fullURL + '">Link to raw data</a> from <a href="https://ssd.jpl.nasa.gov/horizons_batch.cgi">NASA Horizons site</a>';
+		document.getElementById("lnkResults").innerHTML = '<a href="' + BASE_HORIZONS_URL  + fullURL + '">Link to raw data</a> from <a href="https://ssd.jpl.nasa.gov/horizons_batch.cgi">NASA Horizons site</a>';
 
 
-		finalURL = LOCAL_PROXY +  encodeURIComponent(fullURL);
+		finalURL = LOCAL_PROXY + BASE_HORIZONS_URL + encodeURIComponent(fullURL);
 
 		var clientPreload = new XMLHttpRequest();
 		clientPreload.open('GET',finalURL);
@@ -634,7 +632,7 @@ function checkErrors(ephemeris) {
 		errorLength = endPos - startPos +1
 		errorString = ephemeris.substr(startPos, errorLength);
 		document.getElementById("status").innerHTML = "FILE ERROR";
-		document.getElementById("trackedTitle").innerHTML = 'Error: ' + errorString + '<br>Check errors in <a href="' + fullURL + '">received file</a><br>Parameters specified:<br>Start date: ' + paramStartDate + "<br>Stop date: " + paramStopDate + "<br>Timestep: " + paramTimeStep;
+		document.getElementById("trackedTitle").innerHTML = 'Error: ' + errorString + '<br>Check errors in <a href="' + BASE_HORIZONS_URL + fullURL + '">received file</a><br>Parameters specified:<br>Start date: ' + paramStartDate + "<br>Stop date: " + paramStopDate + "<br>Timestep: " + paramTimeStep;
 		console.log('********** Errore 002 in file dati: ' + errorString);
 		console.log("File error, esco");
 		return(-1);
@@ -694,20 +692,20 @@ function loadRealData(caller) {
 	switch (caller) {
 		case "first_start":
 		case "form":
-			fullURL = BASE_HORIZONS_URL; //"https://ssd.jpl.nasa.gov/horizons_batch.cgi?batch=1";
-			fullURL += "&COMMAND=%27" + orbiterID + "%27";
-			fullURL += "&CENTER=%27" + bodyID + "%27";
-			fullURL += "&START_TIME=%27" + START_DATE_chart  + "%27";
-			fullURL += "&STOP_TIME=%27" + END_DATE_chart + "%27";
-			fullURL += "&STEP_SIZE=%27" + TIME_STEP + "%27";
-			fullURL += "&MAKE_EPHEM=%27YES%27";
-			fullURL += "&TABLE_TYPE=%27VECTORS%27";
-			fullURL += "&OUT_UNITS=%27KM-S%27";
-			fullURL += "&REF_SYSTEM=%27J2000%27";
-			fullURL += "&VEC_LABELS=%27YES%27";
-			fullURL += "&CSV_FORMAT=%27YES%27";
-			fullURL += "&OBJ_DATA=%27YES%27";
-			fullURL += "&VEC_TABLE=%273%27";
+			fullURL = ""; //BASE_HORIZONS_URL; //"https://ssd.jpl.nasa.gov/horizons_batch.cgi?batch=1";
+			fullURL += "&COMMAND='" + orbiterID + "'"; // -152 = Chandrayaan2
+			fullURL += "&CENTER='" + bodyID + "'"; // 301 = Moon
+			fullURL += "&START_TIME='" + START_DATE_chart.substr(0,START_DATE_chart.indexOf(" "))  + "'";
+			fullURL += "&STOP_TIME='" + END_DATE_chart.substr(0,START_DATE_chart.indexOf(" ")) + "'";
+			fullURL += "&STEP_SIZE='" + TIME_STEP + "'";
+			fullURL += "&MAKE_EPHEM='YES'";
+			fullURL += "&TABLE_TYPE='VECTORS'";
+			fullURL += "&OUT_UNITS='KM-S'";
+			fullURL += "&REF_SYSTEM='J2000'";
+			fullURL += "&VEC_LABELS='YES'";
+			fullURL += "&CSV_FORMAT='YES'";
+			fullURL += "&OBJ_DATA='YES'";
+			fullURL += "&VEC_TABLE='3'";
 			fullURL += appendCoords;
 			break;
 		case "add_plot1":
@@ -717,7 +715,7 @@ function loadRealData(caller) {
 //	{id: "-62",    name: "mars Hope"},
 //	MARS HOPE: space-explorer-tracker.html?orbiter=-62&body=@499&start=2020-7-31&stop=2021-2-20&step=30d&3dzoom=100000000
 console.log("Carico dati Mars 2020 da url manuale...");
-			fullURL = BASE_HORIZONS_URL + "&MAKE_EPHEM=%27YES%27&TABLE_TYPE=%27VECTORS%27&OUT_UNITS=%27KM-S%27&REF_SYSTEM=%27J2000%27&VEC_LABELS=%27YES%27&CSV_FORMAT=%27YES%27&OBJ_DATA=%27YES%27&VEC_TABLE=%273%27&STEP_SIZE=%271d%27&START_TIME=%272020-7-31 23:7%27&STOP_TIME=%272021-2-20 23:7%27&COMMAND=%2785%27&CENTER=%27@499%27&";
+			fullURL =  "&MAKE_EPHEM='YES'&TABLE_TYPE='VECTORS'&OUT_UNITS='KM-S'&REF_SYSTEM='J2000'&VEC_LABELS='YES'&CSV_FORMAT='YES'&OBJ_DATA='YES'&VEC_TABLE='3'&STEP_SIZE='1d'&START_TIME='2020-7-31 23:7'&STOP_TIME='2021-2-20 23:7'&COMMAND='85'&CENTER='@499'&";
 			break;
 		case "add_plot2":
 			// DEBUG
@@ -726,18 +724,18 @@ console.log("Carico dati Mars 2020 da url manuale...");
 //	{id: "-62",    name: "mars Hope"},
 //	MARS HOPE: space-explorer-tracker.html?orbiter=-62&body=@499&start=2020-7-31&stop=2021-2-20&step=30d&3dzoom=100000000
 console.log("Carico dati Tianwen da url manuale...");
-			fullURL = BASE_HORIZONS_URL + "&MAKE_EPHEM=%27YES%27&TABLE_TYPE=%27VECTORS%27&OUT_UNITS=%27KM-S%27&REF_SYSTEM=%27J2000%27&VEC_LABELS=%27YES%27&CSV_FORMAT=%27YES%27&OBJ_DATA=%27YES%27&VEC_TABLE=%273%27&STEP_SIZE=%271d%27&START_TIME=%272020-7-31 23:7%27&STOP_TIME=%272021-2-20 23:7%27&COMMAND=%27-168%27&CENTER=%27@499%27&";
+			fullURL = "&MAKE_EPHEM='YES'&TABLE_TYPE='VECTORS'&OUT_UNITS='KM-S'&REF_SYSTEM='J2000'&VEC_LABELS='YES'&CSV_FORMAT='YES'&OBJ_DATA='YES'&VEC_TABLE='3'&STEP_SIZE='1d'&START_TIME='2020-7-31 23:7'&STOP_TIME='2021-2-20 23:7'&COMMAND='-168'&CENTER='@499'&";
 			break;
 		}
 
 	document.getElementById("status").innerHTML = "Preparing new download URL...";
 	document.getElementById("trackedTitle").innerHTML = ".";
-	document.getElementById("lnkResults").innerHTML = '<a href="' +fullURL + '">Link to raw data</a> from <a href="https://ssd.jpl.nasa.gov/horizons_batch.cgi">NASA Horizons site</a>';
-	finalURL = LOCAL_PROXY + encodeURIComponent(fullURL);
+	document.getElementById("lnkResults").innerHTML = '<a href="' + BASE_HORIZONS_URL + fullURL + '">Link to raw data</a> from <a href="https://ssd.jpl.nasa.gov/horizons_batch.cgi">NASA Horizons site</a>';
+	finalURL = LOCAL_PROXY + BASE_HORIZONS_URL + encodeURIComponent(fullURL);
 
 	clientRealData.open('GET', finalURL);
 	clientRealData.responseType = 'text';
-console.log ("### LOADREALDATA 001send - Apro " + fullURL + "...(caller:" + caller + ")");
+console.log ("### LOADREALDATA 001send - Apro " + finalURL + "...(caller:" + caller + ")");
 	clientRealData.send() // Async connection to data server.
 
 	clientRealData.onload = function() {
@@ -1238,11 +1236,13 @@ console.log("--------------endOfDatesList",endOfDatesList);
 	console.log("Stop date in url", END_DATE_url);
 
 	if (paramStartDate == "[missing START param]") {
-console.log("Start date from file",START_DATE_file);
-        START_DATE_data = START_DATE_file;
+console.log("Missing start date in URL, reading from file:",START_DATE_file);
+        START_DATE_file = START_DATE_file.replace("%20"," ");
+        START_DATE_data = START_DATE_file.substr(0,START_DATE_chart.indexOf(" "));
 	} else {
-		START_DATE_data = paramStartDate;
-console.log("Sart date from URL",START_DATE_data);
+        paramStartDate = paramStartDate.replace("%20"," ");
+		START_DATE_data = paramStartDate.substr(0,paramStartDate.indexOf(" "));
+console.log("Sart date set from URL: '" +  paramStartDate + "' --> " + START_DATE_data);
 	}
 
 
@@ -1257,10 +1257,10 @@ console.log("End date from URL",END_DATE_data);
 
 
 	if (paramTimeStep == "[missing STOP param]") { // TO DO: implement check for too many steps!
-console.log("Default time step", TIME_STEP);
+console.log("No tinestep in URL, using default time step: ", TIME_STEP);
 	} else {
 		TIME_STEP = paramTimeStep;
-console.log("Time step from URL",TIME_STEP);
+console.log("Time step set from URL: ",TIME_STEP);
 	}
 
 	// Today:
@@ -1272,13 +1272,13 @@ console.log("Time step from URL",TIME_STEP);
 		end_ms = dt_ms + 86400000;
 		end_dt = new Date();
 		end_dt.setTime(end_ms);
-		END_DATE_file= end_dt.getFullYear()+ "-" + (end_dt.getMonth()+1) + "-" + end_dt.getDate() + " " + end_dt.getHours() + ":" + end_dt.getMinutes();
+		END_DATE_file= end_dt.getFullYear()+ "-" + (end_dt.getMonth()+1) + "-" + end_dt.getDate();// + " " + end_dt.getHours() + ":" + end_dt.getMinutes();
 		console.log("New end date: " + END_DATE_file);
 	}
 
 	if (!isValidDate(new Date(START_DATE_data))) {
 		console.log("Invalid start date '" + START_DATE_data + "', using 'today'.");
-		START_DATE_data= dt.getFullYear() + "-" + (dt.getMonth()+1) + "-" +  dt.getDate() + " " + dt.getHours() + ":" + dt.getMinutes();
+		START_DATE_data= dt.getFullYear() + "-" + (dt.getMonth()+1) + "-" +  dt.getDate();// + " " + dt.getHours() + ":" + dt.getMinutes();
 		console.log("New start date: " + START_DATE_data);
 	}
 
@@ -1287,33 +1287,33 @@ console.log("Time step from URL",TIME_STEP);
 		end_ms = dt_ms + 86400000;
 		end_dt = new Date();
 		end_dt.setTime(end_ms);
-		END_DATE_data= end_dt.getFullYear()+ "-" + (end_dt.getMonth()+1) + "-" + end_dt.getDate() + " " + end_dt.getHours() + ":" + end_dt.getMinutes();
+		END_DATE_data= end_dt.getFullYear()+ "-" + (end_dt.getMonth()+1) + "-" + end_dt.getDate();// + " " + end_dt.getHours() + ":" + end_dt.getMinutes();
 		console.log("New end date: " + END_DATE_data);
 	}
 
 
 	START_DATE_chart_ms = new Date(START_DATE_data).getTime(); // Start chart from first valid date
 	START_DATE_chart_temp= new Date(START_DATE_chart_ms);
-	START_DATE_chart = START_DATE_chart_temp.getFullYear() + "-" + (START_DATE_chart_temp.getMonth()+1) + "-" +  START_DATE_chart_temp.getDate() + " "+  START_DATE_chart_temp.getHours() + ":" +  START_DATE_chart_temp.getMinutes();
+	START_DATE_chart = START_DATE_chart_temp.getFullYear() + "-" + (START_DATE_chart_temp.getMonth()+1) + "-" +  START_DATE_chart_temp.getDate();//+ " "+  START_DATE_chart_temp.getHours() + ":" +  START_DATE_chart_temp.getMinutes(); // DEBUG Time no more supported using my proxy?!?
 
 	if (paramStopDate == "[missing STOP param]") {
 		// Set tomorrow as default stop date:
 console.log("No stop date provided, set to 1 day after start date");
 		END_DATE_chart_ms = new Date(START_DATE_chart_ms+86400000) // End chart at first valid date plus 1 day
 		END_DATE_chart_temp= new Date(END_DATE_chart_ms);
-		END_DATE_chart = END_DATE_chart_temp.getFullYear()+ "-" + (END_DATE_chart_temp.getMonth()+1) + "-" + END_DATE_chart_temp.getDate() + " "+  END_DATE_chart_temp.getHours() + ":" +  END_DATE_chart_temp.getMinutes();
+		END_DATE_chart = END_DATE_chart_temp.getFullYear()+ "-" + (END_DATE_chart_temp.getMonth()+1) + "-" + END_DATE_chart_temp.getDate();//+ " "+  END_DATE_chart_temp.getHours() + ":" +  END_DATE_chart_temp.getMinutes();  // DEBUG Time no more supported using my proxy?!?
 	} else {
 		if (paramStopDate == "max") {
 			// Set last available date as default stop date:
 console.log("MAX stop date requested, set to file value");
 			END_DATE_chart_ms = new Date(END_DATE_file)
 			END_DATE_chart_temp= new Date(END_DATE_chart_ms);
-			END_DATE_chart = END_DATE_chart_temp.getFullYear()+ "-" + (END_DATE_chart_temp.getMonth()+1) + "-" + END_DATE_chart_temp.getDate() + " "+  END_DATE_chart_temp.getHours() + ":" +  END_DATE_chart_temp.getMinutes();
+			END_DATE_chart = END_DATE_chart_temp.getFullYear()+ "-" + (END_DATE_chart_temp.getMonth()+1) + "-" + END_DATE_chart_temp.getDate();//  + " "+  END_DATE_chart_temp.getHours() + ":" +  END_DATE_chart_temp.getMinutes();  // DEBUG Time no more supported using my proxy?!?
 		} else {
 console.log("using stop date provided by URL");
 			END_DATE_chart_ms = new Date(END_DATE_url)
 			END_DATE_chart_temp= new Date(END_DATE_chart_ms);
-			END_DATE_chart = END_DATE_chart_temp.getFullYear()+ "-" + (END_DATE_chart_temp.getMonth()+1) + "-" + END_DATE_chart_temp.getDate() + " "+  END_DATE_chart_temp.getHours() + ":" +  END_DATE_chart_temp.getMinutes();
+			END_DATE_chart = END_DATE_chart_temp.getFullYear()+ "-" + (END_DATE_chart_temp.getMonth()+1) + "-" + END_DATE_chart_temp.getDate();// + " "+  END_DATE_chart_temp.getHours() + ":" +  END_DATE_chart_temp.getMinutes();  // DEBUG Time no more supported using my proxy?!?
 		}
 	}
 
@@ -1325,18 +1325,18 @@ console.log("Inizio grafico:",START_DATE_chart);
 console.log("Fine grafico:",END_DATE_chart);
 
 	document.getElementById("status").innerHTML = "Available dates extracted...";
-	document.getElementById("txtStart").value = START_DATE_chart.replace(" "," ");
-	document.getElementById("txtEnd").value = END_DATE_chart.replace(" "," ");
-	document.getElementById("txtStep").value = TIME_STEP.replace(" "," ");
-    document.getElementById("lblDates").innerHTML = "Calculated dates limits: " + START_DATE_file.replace(" "," ") + " - " + END_DATE_file.replace(" "," ")+ " - Outbound dates errors are not detected";
+	document.getElementById("txtStart").value = START_DATE_chart.replace("%20"," ");
+	document.getElementById("txtEnd").value = END_DATE_chart.replace("%20"," ");
+	document.getElementById("txtStep").value = TIME_STEP.replace("%20"," ");
+    document.getElementById("lblDates").innerHTML = "Calculated dates limits: " + START_DATE_file.replace("%20"," ") + " - " + END_DATE_file.replace("%20"," ")+ " - Outbound dates errors are not detected";
     document.getElementById("lblDates2").innerHTML = "Dates line in file: <b>" + lastDateLineContents + "</b>";
 }
 
 
 	function manualCalc() {
     	document.getElementById("status").innerHTML = "Processing...";
-		START_DATE_chart = document.getElementById("txtStart").value.replace(" "," ");
-		END_DATE_chart = 	document.getElementById("txtEnd").value.replace(" "," ");
+		START_DATE_chart = document.getElementById("txtStart").value.replace("%20"," ");
+		END_DATE_chart = 	document.getElementById("txtEnd").value.replace("%20"," ");
 		TIME_STEP = 	document.getElementById("txtStep").value;
 		TIME_STEP_min = convertTimestepToMinutes(TIME_STEP, START_DATE_chart,END_DATE_chart);
 
@@ -1393,8 +1393,8 @@ function formatNumber(num) {
 
 	$( document ).ready(
 	 function() {
-	 	document.getElementById("txtStart").value = START_DATE_chart.replace(" "," ");
-	 	document.getElementById("txtEnd").value = END_DATE_chart.replace(" "," ");
+	 	document.getElementById("txtStart").value = START_DATE_chart.replace("%20"," ");
+	 	document.getElementById("txtEnd").value = END_DATE_chart.replace("%20"," ");
 		document.getElementById("txtStep").value = TIME_STEP;
 		init(); // Init vars
 		if (preLoad()<0) { // Load file with fake dates just to get available dates, then load real data
@@ -1420,7 +1420,7 @@ function formatNumber(num) {
    
 	<center><big><big><strong>Space explorer tracker</strong></big></big><br>
 	by Luca Cassioli 2018-2022<br>
-	V. 5.1.0 - 08/MAR/2022<br>
+	V. 5.2.0 - 05/OCT/2022<br>
 	<i>Created with <a href="https://plot.ly/javascript/3d-charts/">plot.ly</a></i><br>
 	<strong><big><big><big><span id="status" name="status">-76([noOrbiterName]) around @499(Mars)</span></big></big></big></strong></center><br>
 	<span id="trackedTitle" name="trackedTitle">--</span><br>
@@ -1462,8 +1462,8 @@ function formatNumber(num) {
 	<hr>
 <br>
 <br>
-<span id="lblLinks" name="lblLinks"><a href="https://win98.altervista.org/space/exploration/3d/space-explorer-tracker.html?orbiter=-168&body=@499&start=2021-FEB-18 20:40&stop=2021-FEB-18 20:46&step=200&3dzoom=10000&radius=3392">MARS 2020 EDL</a><br>
-<a href="https://win98.altervista.org/space/exploration/3d/space-explorer-tracker.html?orbiter=-62&amp;body=@499">Hope around Mars</a><br><a href="https://win98.altervista.org/space/exploration/3d/space-explorer-tracker.html?orbiter=-9901491&amp;body=@499">Tianwen-1  around Mars</a><br><a href="https://win98.altervista.org/space/exploration/3d/space-explorer-tracker.html?orbiter=-64&amp;body=@2101955">Osiris-Rex around Bennu</a><br><a href="https://win98.altervista.org/space/exploration/3d/space-explorer-tracker.html?orbiter=-37&amp;body=@399&amp;start=2019/11/1&amp;stop=2020/12/20&amp;step=30d&amp;3dzoom=300000000">Hayabusa 2 back home</a><br><br>Use this format for other explorers: <a href="https://win98.altervista.org/space/exploration/3d/www.example.com/space-explorer-tracker.html?body=XXXX&amp;orbiter=YYYY&amp;start=yyyy-mm-dd hh:mm&amp;stop=yyyy-mm-dd hh:mm&amp;step=xxxxd&amp;3dzoom=1000000">www.example.com/space-explorer-tracker.html?body=XXXX&amp;orbiter=YYYY</a><br></span><br>
+<span id="lblLinks" name="lblLinks"><a href="http://win98.altervista.org/space/exploration/3d/space-explorer-tracker.html?orbiter=-168&body=@499&start=2021-FEB-18 20:40&stop=2021-FEB-18 20:46&step=200&3dzoom=10000&radius=3392">MARS 2020 EDL</a><br>
+<a href="http://win98.altervista.org/space/exploration/3d/space-explorer-tracker.html?orbiter=-62&amp;body=@499">Hope around Mars</a><br><a href="http://win98.altervista.org/space/exploration/3d/space-explorer-tracker.html?orbiter=-9901491&amp;body=@499">Tianwen-1  around Mars</a><br><a href="http://win98.altervista.org/space/exploration/3d/space-explorer-tracker.html?orbiter=-64&amp;body=@2101955">Osiris-Rex around Bennu</a><br><a href="http://win98.altervista.org/space/exploration/3d/space-explorer-tracker.html?orbiter=-37&amp;body=@399&amp;start=2019/11/1&amp;stop=2020/12/20&amp;step=30d&amp;3dzoom=300000000">Hayabusa 2 back home</a><br><br>Use this format for other explorers: <a href="http://win98.altervista.org/space/exploration/3d/www.example.com/space-explorer-tracker.html?body=XXXX&amp;orbiter=YYYY&amp;start=yyyy-mm-dd hh:mm&amp;stop=yyyy-mm-dd hh:mm&amp;step=xxxxd&amp;3dzoom=1000000">www.example.com/space-explorer-tracker.html?body=XXXX&amp;orbiter=YYYY</a><br></span><br>
 
 <big><strong>USAGE</strong></big><br>
 Please specify in URL:<br>
@@ -1476,7 +1476,7 @@ step: time step in minutes, hours or days depending on final letter (11d= 11 	da
 radius: planet radius in km<br>
 <b>Example</b>:<br>
 Show orbits for Insight around Mars:<br>
-https://www.example.com/space-explorer-tracker.html?body=499&amp;orbiter=-189&amp;start=2010-10-1
+http://www.example.com/space-explorer-tracker.html?body=499&amp;orbiter=-189&amp;start=2010-10-1
  10:10&amp;stop=2010-10-2 12:00&amp;step=1d<br>
 <br>
 List of codes: <a href="https://ssd.jpl.nasa.gov/horizons_batch.cgi?batch=1&amp;COMMAND='*'&amp;CENTER='@*'">link</a><br>
@@ -1552,4 +1552,4 @@ Italian excel table:<br>
 English table:<br>
 <textarea id="excel2" name="excel2" cols="100" rows="10">(tabella)</textarea><br>
 
-	<svg id="js-plotly-tester" xmlns="https://www.w3.org/2000/svg" xlink="https://www.w3.org/1999/xlink" style="position: absolute; left: -10000px; top: -10000px; width: 9000px; height: 9000px; z-index: 1;"><path class="js-reference-point" d="M0,0H1V1H0Z" style="stroke-width: 0px; fill: black;"></path></svg></body></html>
+	<svg id="js-plotly-tester" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" style="position: absolute; left: -10000px; top: -10000px; width: 9000px; height: 9000px; z-index: 1;"><path class="js-reference-point" d="M0,0H1V1H0Z" style="stroke-width: 0px; fill: black;"></path></svg></body></html>
