@@ -6,8 +6,13 @@ Moon path for period  **september 2022- november 2022** at 1481 minutes interval
 
 ![image](https://user-images.githubusercontent.com/1620953/193834153-5b2a1f6f-a916-4355-8ea2-b272a8d20f8c.png)
 
-- **3dtracker**: created to track Hayabusa2 mission, then extended to show all "rays" from Deep Space Network
+- **[3dtracker](https://jumpjack.github.io/space/3dtracker.html)**: created to track Hayabusa2 mission, then extended to show all "rays" from Deep Space Network (see also [old page](http://win98.altervista.org/space/exploration/3d/3dtracker.html)):
+
+![image](https://user-images.githubusercontent.com/1620953/193994883-6cfd671b-e7e8-4bb5-b47d-d80255325186.png)
+
+
 - **space-explorer-tracker**: visually show 2d and 3d trajectories of spacecrafts/objects using NASA Horizons data
+
 - **NHUGUI - NASA Horizons Unofficial Graphical User Interface**
 
 
