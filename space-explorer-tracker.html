@@ -545,7 +545,7 @@ console.log(orbiterID);
 console.log("BODY o CENTER non definito."); 	
 		showHelp = false;
 		fullURL = BASE_HORIZONS_URL + "&COMMAND=%27*%27&CENTER=%27@%27"; // Download list of bodies
-		finalURL = LOCAL_PROXY +  /*encodeURIComponent*/(fullURL);
+		finalURL = LOCAL_PROXY +  encodeURIComponent(fullURL);
 		var clientMissingData = new XMLHttpRequest();
 		clientMissingData.open('GET',  finalURL);
 
@@ -587,7 +587,7 @@ console.log("### PRELOAD 001send");
 		document.getElementById("lnkResults").innerHTML = '<a href="' +fullURL + '">Link to raw data</a> from <a href="https://ssd.jpl.nasa.gov/horizons_batch.cgi">NASA Horizons site</a>';
 
 
-		finalURL = LOCAL_PROXY +  /*encodeURIComponent*/(fullURL);
+		finalURL = LOCAL_PROXY +  encodeURIComponent(fullURL);
 
 		var clientPreload = new XMLHttpRequest();
 		clientPreload.open('GET',finalURL);
@@ -733,7 +733,7 @@ console.log("Carico dati Tianwen da url manuale...");
 	document.getElementById("status").innerHTML = "Preparing new download URL...";
 	document.getElementById("trackedTitle").innerHTML = ".";
 	document.getElementById("lnkResults").innerHTML = '<a href="' +fullURL + '">Link to raw data</a> from <a href="https://ssd.jpl.nasa.gov/horizons_batch.cgi">NASA Horizons site</a>';
-	finalURL = LOCAL_PROXY + /*encodeURIComponent*/(fullURL);
+	finalURL = LOCAL_PROXY + encodeURIComponent(fullURL);
 
 	clientRealData.open('GET', finalURL);
 	clientRealData.responseType = 'text';
