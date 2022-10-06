@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+    <head>
+
+        <title>jClocksGMT v. 2.0</title>
+
+        <link rel="shortcut icon" type="image/png" href="images/favicon.png">
+        
+        <link rel="stylesheet" href="css/jClocksGMT.css">
+        
+        <style>
+            body { font-family: Arial, sans-serif; }
+            jClocksGMT.jcgmt-lbl { font-size: 8px;}
+            jClocksGMT.jcgmt-container { font-size: 8px;}
+            jClocksGMT.jcgmt-date { font-size: 8px;}
+        </style>
+
+    </head>
+    <body >
+<small><small><small>
+        <div id="clock_PT" ><small></div>
+        <div id="clock_ET"></div>
+        <div id="clock_GMT"></div>
+        <div id="clock_EU"></div>
+        <div id="clock_tokyo"></div>
+
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+
+        <script src="js/jClocksGMT.js"></script>
+        <script src="js/jquery.rotate.js"></script>
+
+        <script>
+            $(document).ready(function(){
+
+                $('#clock_PT').jClocksGMT(
+                {
+                    title: 'Pacific Time (-8)',
+                    offset: '-8',
+                    skin: 3,
+                    timeformat: 'YYYY/MM/DD<br>HH:mm:ss'
+                });
+
+                $('#clock_ET').jClocksGMT(
+                {
+                    title: 'Eastern Time (-5)',
+                    offset: '-5',
+                    skin: 3,
+                    timeformat: 'YYYY/MM/DD<br>HH:mm:ss'
+                });
+
+                $('#clock_GMT').jClocksGMT(
+                {
+                    title: 'GMT',
+                    offset: '0',
+                    skin: 3,
+                    timeformat: 'YYYY/MM/DD<br>HH:mm:ss'
+                });
+
+                $('#clock_EU').jClocksGMT(
+                {   
+										title: "CEST (+1)",
+										offset: "+1",
+                    skin: 3,
+                    timeformat: 'YYYY/MM/DD<br>HH:mm:ss'
+                });
+
+                $('#clock_tokyo').jClocksGMT(
+                {
+                    title: 'JST (Tokyo) (+9)',
+                    offset: '+9',
+                    skin: 3,
+                    timeformat: 'YYYY/MM/DD<br>HH:mm:ss'
+                });
+
+            });
+        </script>
+
+    </body>
+</html>
