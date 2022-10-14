@@ -1,0 +1,487 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="PSPad editor, www.pspad.com">
+  <title>Grafico ora legale</title>
+<script src="Chart.bundle.js"></script>
+<script src="https://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=https://raw.githubusercontent.com/mourner/suncalc/master/suncalc.js"></script>
+<script>
+TRACE_WIDTH = 2;
+TRACE_HIGHLIGHTED_WIDTH = 6;
+const  firstDay = new Date("2022-01-01");
+const  firstDayms = firstDay.getTime();
+
+
+
+const updateTooltipShow = (chart, enabled) => {
+  chart.options.tooltips.enabled = enabled;
+  chart.update();
+}
+
+function mialabel(tooltipItem, data) {
+	for (var i = 0; i < data.datasets.length; i++) {
+		data.datasets[i].borderWidth = TRACE_WIDTH;
+
+	}
+	var alba = data.datasets[0].data[tooltipItem.index];
+	var tramonto = data.datasets[2].data[tooltipItem.index];
+	var durata = tramonto-alba;
+	finalLabel = "giorno " + tooltipItem.index + " (" + daynum_to_yyyy_mm_dd(tooltipItem.index) + ") - alba: " + epoch_to_hh_mm_ss(alba)+ "," +
+		"tramonto: " + epoch_to_hh_mm_ss(tramonto) + ", giorno: " +  epoch_to_hh_mm_ss(durata);
+	return finalLabel ;
+}
+
+
+
+function config() {
+	var configVar = {
+		type : "line",
+		data: {
+			datasets: [] ,
+		},
+		lineAtIndex: [],
+        verticalLinesLabels : [],
+		verticalLinesColors: [],
+        verticalLinesAlignments : [],
+        verticalLinesX: [],
+        verticalLinesY: [],
+		options: {
+
+			hover: {
+				animationDuration: 0
+			},
+			onHover: function(e, activeElements) { // rimuove tooltip quando il mouse non e' su nessun punto
+			      const {
+			        bottom,
+			        top,
+			        right,
+			        left
+			      } = this.chartArea;
+			      if (e.x >= left && e.x <= right && e.y <= bottom && e.y >= top) {
+			        updateTooltipShow(this, true)
+			      } else {
+			        updateTooltipShow(this, false)
+			      }
+			    },
+			legend: {
+				display: true,
+				position: "right",
+				onHover: function(event, legendItem) { // Evidenzia traccia
+					var ci = this.chart;
+					var options = ci.options || {};
+					var hoverOptions = options.hover || {};
+					hoveredDatasetIndex = legendItem.datasetIndex;
+					for (var i=0; i< window.myChart.data.datasets.length; i++) {
+						 ci.updateHoverStyle(ci.getDatasetMeta(i).data, hoverOptions.mode, false);
+						 ci.data.datasets[i].borderWidth = TRACE_WIDTH;
+					}
+					ci.updateHoverStyle(ci.getDatasetMeta(hoveredDatasetIndex).data, hoverOptions.mode, true);
+					ci.data.datasets[hoveredDatasetIndex].borderWidth = TRACE_HIGHLIGHTED_WIDTH;
+					ci.render();
+					ci.update();
+
+				},
+				onLeave: function(event, legendItem) { // Toglie evidenziazione traccia
+					var ci = this.chart;
+					var options = ci.options || {};
+					var hoverOptions = options.hover || {};
+					hoveredDatasetIndex = legendItem.datasetIndex;
+					for (var i=0; i < window.myChart.data.datasets.length; i++) {
+						 ci.updateHoverStyle(ci.getDatasetMeta(i).data, hoverOptions.mode, false);
+						 ci.data.datasets[i].borderWidth = TRACE_WIDTH;
+					}
+					ci.render();
+					ci.update();
+				}
+			},
+			tooltips: {
+				position: "custom",
+				yAlign: null, // Cancella freccetta-puntatore
+				xAlign: 'center',
+				enabled: true,
+				callbacks: {
+					label:
+						function(tooltipItem, data) {
+							var label =  mialabel(tooltipItem, data); // Personalizzazione etichetta di ogni punto
+							return label;
+						},
+					title : function() { return "" }, // Rimuove dal tooltip il numero mostrato per default all'inizio
+				},
+				mode: "point",
+				 options: {
+					  interaction: {
+							mode: 'dataset'
+					  }
+				 },
+			},
+			title: {
+				display: true,
+				text: ''
+			},
+			scales: {
+				xAxes: [{
+					position: 'bottom',
+					scaleLabel: {
+						labelString: 'Giorno',
+						display: true,
+					},
+				}],
+				yAxes: [{
+					type: 'linear',
+					ticks: {
+						min: 0,
+						max: 86400 ,
+						stepSize : 3600,
+                        userCallback: function(v) { return epoch_to_hh_mm_ss(v) },
+					},
+					scaleLabel: {
+						labelString: 'Orario',
+						display: true
+					}
+				}]
+			}
+		}
+	};
+return configVar;
+}
+
+  function epoch_to_hh_mm_ss(epoch) {
+	var fullDate = new Date(epoch*1000);
+	finalLabel = fullDate.getHours()+":"+ fullDate.getMinutes();
+    return fullDate.toISOString().substr(11, 8)
+  }
+
+  function daynum_to_yyyy_mm_dd(daynum) {
+	result = new Date(firstDayms + daynum * 86400000)
+    return result.toISOString().substr(0,10)
+  }
+
+
+function formatTime(secs)
+{
+    var hours = Math.floor(secs / (60 * 60));
+
+    var divisor_for_minutes = secs % (60 * 60);
+    var minutes = Math.floor(divisor_for_minutes / 60);
+
+    var divisor_for_seconds = divisor_for_minutes % 60;
+    var seconds = Math.ceil(divisor_for_seconds);
+
+    return hours + ":" + minutes;
+}
+
+
+
+function datasetTemplate(name) {
+	return	{
+		data: [],
+		label:	name,
+		borderColor: "#000000",
+  		fill: false,
+		lineTension: 0,
+		borderWidth : TRACE_WIDTH
+	}
+}
+
+
+Chart.Tooltip.positioners.custom = function(elements, position) {
+	// Personalizza posizionamento dei tooltip per evitare che si sovrappongano al testo in fondo ai grafici
+	if (!elements.length) {
+	  return false;
+	}
+	offset = 0;
+	CHAR_WIDTH = 8;
+	elements.forEach( function (a) { // Determina la lunghezza della stringa piu' lunga
+		length = a._chart.config.data.datasets[a._datasetIndex].label.length;
+		if ( length > offset) {
+			offset = length;
+		}
+	});
+	return { // Posiziona il tooltip a sinistra del punto del grafico
+	  x: position.x - offset * CHAR_WIDTH,
+	  y: position.y
+	}
+  }
+
+function showVerticaLine(num, text, color) {
+    window.myChart.config.lineAtIndex = [num];
+    window.myChart.config.verticalLinesLabels = [text];
+    window.myChart.config.verticalLinesColors = [color];
+    window.myChart.config.verticalLinesX = [5];
+    myChart.update()
+}
+
+function chartSetup() {
+	configChart = config();
+	scDataChart = {
+		labels: [],
+		datasets: []
+	}
+	scDataChart.datasets.push(datasetTemplate("Tramonto legale"));   // 0
+	scDataChart.datasets.push(datasetTemplate("Tramonto solare"));   // 1
+	scDataChart.datasets.push(datasetTemplate("Alba legale"));       // 2
+	scDataChart.datasets.push(datasetTemplate("Alba solare"));       // 3
+
+	scDataChart.datasets.push(datasetTemplate("Lunghezza giorno")); // 4
+
+  	scDataChart.datasets[0].showLine= false
+  	scDataChart.datasets[1].showLine= false;
+  	scDataChart.datasets[2].showLine= false;
+  	scDataChart.datasets[3].showLine= false;
+  	scDataChart.datasets[4].showLine= false;
+
+
+  	scDataChart.datasets[0].borderColor= "#0000FF";
+    //scDataChart.datasets[0].backgroundColor = "#FFFF00"
+    scDataChart.datasets[0].fill =  1;
+
+  	scDataChart.datasets[1].borderColor= "#AAAAFF";
+    //scDataChart.datasets[1].backgroundColor = "#DDDDDD";
+    scDataChart.datasets[1].fill =  1;
+
+  	scDataChart.datasets[2].borderColor= "#FF0000";
+    //scDataChart.datasets[2].backgroundColor = "#DDDDDD";
+    scDataChart.datasets[2].fill =  1;
+
+  	scDataChart.datasets[3].borderColor= "#FFAAAA";
+    //scDataChart.datasets[3].backgroundColor = "#DDDDDD";
+    scDataChart.datasets[3].fill =  1;
+
+
+  	scDataChart.datasets[4].borderColor= "#55FF55"; // dayLength
+
+
+	configChart.data = scDataChart;
+	ctx = document.getElementById("graficoOraLegale").getContext('2d')
+	window.myChart = new Chart(ctx,configChart	 );
+
+
+}
+
+function getData(lat,lon) {
+	var firstDayms = firstDay.getTime();
+	var location = {lat : lat, lon:lon};
+	var times = [];
+    sunriseData = [];
+	sunsetData = [];
+	subtract = 0;
+
+	sunsetMin = 86400;
+	sunsetMax = 0;
+	sunriseMin = 86400;
+	sunriseMax = 0;
+	minDayLength = 86400;
+	maxDayLength = 0;
+
+    scDataChart.datasets[0].data = [];
+    scDataChart.datasets[1].data = [];
+    scDataChart.datasets[2].data = [];
+    scDataChart.datasets[3].data = [];
+    scDataChart.datasets[4].data = [];
+
+    scDataChart.labels = [];
+
+    maxDayLengthIndex = 0;
+    maxDayLength_day = "";
+    minDayLengthIndex = 0;
+    minDayLength_day = "";
+    sunriseMinIndex = 0;
+    sunriseMin_day = "";
+    sunriseMaxIndex = 0;
+    sunriseMax_day = "";
+    sunsetMinIndex = 0;
+    sunsetMin_day = "";
+    sunsetMaxIndex = 0;
+    sunsetMax_day = "";
+	for (var dayIndex = 0; dayIndex < 365; dayIndex+=1) {
+		currDatems = firstDayms + 86400000*dayIndex;
+		nextDatems = currDatems + 86400000;
+		currDate = new Date(currDatems);
+		nextDate = new Date(nextDatems);
+		currValues = SunCalc.getTimes(currDate, location.lat, location.lon);
+
+        scDataChart.labels.push(currDate.getMonth()+1);
+
+		///////////// Alba ////////////
+		if (!!(Date.parse(currValues.sunrise))) {
+			sunriseTime = currValues.sunrise.getHours()*3600 + currValues.sunrise.getMinutes()*60;
+			if (isDST(nextDate)) {
+				subtract = 3600;
+			} else {
+				subtract = 0;
+			}
+			scDataChart.datasets[2].data.push(sunriseTime);
+	        scDataChart.datasets[3].data.push(sunriseTime-subtract);
+			if (sunriseTime < sunriseMin) {
+				sunriseMin = sunriseTime;
+				sunriseMinIndex = dayIndex;
+				sunriseMin_date = new Date(firstDay.getTime() + sunriseMinIndex*86400000);
+				sunriseMin_day = sunriseMin_date.toISOString().substr(0,10);
+			}
+
+			if (sunriseTime > sunriseMax) {
+				sunriseMax = sunriseTime;
+				sunriseMaxIndex = dayIndex;
+				sunriseMax_date = new Date(firstDay.getTime() + sunriseMaxIndex*86400000);
+				sunriseMax_day = sunriseMax_date.toISOString().substr(0,10);
+			}
+		} else {
+//console.log("Invalid sunrise:",currValues.sunrise);
+			sunriseTime = NaN;
+			scDataChart.datasets[2].data.push(0);
+			scDataChart.datasets[3].data.push(0);
+		}
+
+
+		////////////// Tramonto //////////
+		if (!!(Date.parse(currValues.sunset))) {
+			sunsetTime = currValues.sunset.getHours()*3600 + currValues.sunset.getMinutes()*60;
+			if (isDST(nextDate)) {
+				subtract = 3600;
+			} else {
+				subtract = 0;
+			}
+			scDataChart.datasets[0].data.push(sunsetTime);
+			scDataChart.datasets[1].data.push(sunsetTime-subtract);
+			if (sunsetTime < sunsetMin) {
+				sunsetMin = sunsetTime;
+				sunsetMinIndex = dayIndex;
+				sunsetMin_date = new Date(firstDay.getTime() + sunsetMinIndex*86400000);
+				sunsetMin_day = sunsetMin_date.toISOString().substr(0,10);
+			}
+
+			if (sunsetTime > sunsetMax) {
+				sunsetMax = sunsetTime;
+				sunsetMaxIndex = dayIndex;
+				sunsetMax_date = new Date(firstDay.getTime() + sunsetMaxIndex*86400000);
+				sunsetMax_day = sunsetMax_date.toISOString().substr(0,10);
+			}
+		} else {
+//console.log("Invalid sunset:",currValues.sunset);
+			sunsetTime = NaN;
+			scDataChart.datasets[0].data.push(86399);
+			scDataChart.datasets[1].data.push(86399);
+		}
+
+
+		////////// Lunghezza giorno /////////////
+		if ((!isNaN(sunriseTime)) && (!isNaN(sunsetTime))) {
+			dayLength = sunsetTime - sunriseTime;
+        	scDataChart.datasets[4].data.push(dayLength); // dayLength
+			if (dayLength > maxDayLength) {
+				maxDayLength = dayLength;
+				maxDayLengthIndex = dayIndex;
+				maxDayLength_date = new Date(firstDay.getTime() + maxDayLengthIndex*86400000);
+				maxDayLength_day = maxDayLength_date.toISOString().substr(0,10);
+			}
+
+			if (dayLength < minDayLength) {
+				minDayLength = dayLength;
+				minDayLengthIndex = dayIndex;
+				minDayLength_date = new Date(firstDay.getTime() + minDayLengthIndex*86400000);
+				minDayLength_day = minDayLength_date.toISOString().substr(0,10);
+			}
+		} else {
+		 // invalid sunrise/sunset date
+        	scDataChart.datasets[4].data.push(0); // dayLength
+		}
+	}
+
+    spn_maxDayLength.innerHTML = epoch_to_hh_mm_ss(maxDayLength) + ", giorno " + maxDayLengthIndex + " (" + maxDayLength_day +  ")";
+    spn_minDayLength.innerHTML = epoch_to_hh_mm_ss(minDayLength) + ", giorno " + minDayLengthIndex + " (" + minDayLength_day +  ")";
+    spn_sunriseMin.innerHTML = epoch_to_hh_mm_ss(sunriseMin) + ", giorno " + sunriseMinIndex + " (" + sunriseMin_day +  ")";
+    spn_sunriseMax.innerHTML = epoch_to_hh_mm_ss(sunriseMax) + ", giorno " + sunriseMaxIndex + " (" + sunriseMax_day +  ")";
+    spn_sunsetMin.innerHTML = epoch_to_hh_mm_ss(sunsetMin) + ", giorno " + sunsetMinIndex + " (" + sunsetMin_day +  ")";
+    spn_sunsetMax.innerHTML = epoch_to_hh_mm_ss(sunsetMax) + ", giorno " + sunsetMaxIndex + " (" + sunsetMax_day +  ")";
+
+	window.myChart.update();
+}
+
+function isDST(d) {
+    let jan = new Date(d.getFullYear(), 0, 1).getTimezoneOffset();
+    let jul = new Date(d.getFullYear(), 6, 1).getTimezoneOffset();
+    return Math.max(jan, jul) !== d.getTimezoneOffset();
+}
+
+
+
+const verticalLinePlugin = {
+  getLinePosition: function (chart, pointIndex) {
+      const meta = chart.getDatasetMeta(0); // first dataset is used to discover X coordinate of a point
+      const data = meta.data;
+      return data[pointIndex]._model.x;
+  },
+  renderVerticalLine: function (chartInstance, pointIndex, label, color, alignment, xOffset, yOffset) {
+      const lineLeftOffset = this.getLinePosition(chartInstance, pointIndex);
+      const scale = chartInstance.scales['y-axis-0'];
+      const context = chartInstance.chart.ctx;
+	  if (xOffset == undefined) xOffset = 0;
+	  if (yOffset == undefined) yOffset = 0;
+
+      // render vertical line
+      context.beginPath();
+      context.strokeStyle = color;
+      context.moveTo(lineLeftOffset, scale.top);
+      context.lineTo(lineLeftOffset, scale.bottom);
+      context.stroke();
+
+      // write label
+      context.fillStyle = color;
+      context.textAlign = alignment;
+      context.fillText(label, lineLeftOffset + xOffset, (scale.bottom - scale.top) / 2 + scale.top + yOffset);
+  },
+
+  afterDatasetsDraw: function (chart, easing) {
+      if (chart.config.lineAtIndex) {
+			labelIndex = 0;
+			chart.config.lineAtIndex.forEach((pointIndex) => {
+				if (chart.config.verticalLinesLabels != undefined) { // if array of labels exists...
+					label = chart.config.verticalLinesLabels[labelIndex]; // chart.config.verticalLinesLabels must contain all elements; use  elements ="" for lines not requiring labels
+					color = chart.config.verticalLinesColors[labelIndex]; // chart.config.verticalLinesColors must contain all elements
+					alignment =  chart.config.verticalLinesAlignments[labelIndex]; // chart.config.verticalLinesAlignments must contain all elements
+					xOff =  chart.config.verticalLinesX[labelIndex]; // chart.config.verticalLinesX must contain all elements
+					yOff =  chart.config.verticalLinesY[labelIndex]; // chart.config.verticalLinesY must contain all elements
+				} else {
+					label = "";
+				}
+			  	this.renderVerticalLine(chart, pointIndex, label, color, alignment, xOff, yOff)
+                labelIndex++;
+		  });
+      }
+  }
+};
+
+Chart.plugins.register(verticalLinePlugin);
+
+
+</script>
+  </head>
+  <body>
+  <center><big><big><big><big>Grafico ora legale</big></big></big></big><br>
+  v. 1.0.0 - 14/10/2022<br>
+  Creato con Charts.js<br>
+  <br>
+  </center>
+		<div style="width:1200px">
+			<canvas id="graficoOraLegale" name="graficoOraLegale" height="180">
+			</canvas>
+		</div>
+	<b>Passa il mouse sulle scritte qui sotto per evidenziare nel grafico i singoli eventi:</b><br>
+	Giorno pi&ugrave; lungo: <span id="spn_maxDayLength" name="spnmaxDayLength" onmouseover="showVerticaLine(maxDayLengthIndex, 'Giorno pi&ugrave; lungo', '#000000');">-</span><br>
+	Giorno pi&ugrave; cort: <span id="spn_minDayLength" name="spn_minDayLength" onmouseover="showVerticaLine(minDayLengthIndex, 'Giorno pi&ugrave; corto', '#000000');">-</span><br>
+	Alba pi&ugrave; anticipata: <span id="spn_sunriseMin" name="spn_sunriseMin" onmouseover="showVerticaLine(sunriseMinIndex, 'Alba pi&ugrave; anticipata', '#000000');">-</span><br>
+	Alba pi&ugrave; posticipata: <span id="spn_sunriseMax" name="spn_sunriseMax" onmouseover="showVerticaLine(sunriseMaxIndex, 'Alba pi&ugrave; posticipata', '#000000');">-</span><br>
+	Tramonto pi&ugrave; anticipato: <span id="spn_sunsetMin" name="spn_sunsetMin" onmouseover="showVerticaLine(sunsetMinIndex, 'Tramonto pi&ugrave; anticipato', '#000000');">-</span><br>
+	Tramonto pi&ugrave; posticipato: <span id="spn_sunsetMax" name="spn_sunsetMax" onmouseover="showVerticaLine(sunsetMaxIndex, 'Tramonto pi&ugrave; posticipato', '#000000');">-</span><br>
+	<br>
+	Latitutine: <input type="text" id="inpLat" name="inpLat" value = "42"><br>
+	Longitutine: <input type="text" id="inpLon" name="inpLon" value = "12"><br>
+	<button onclick="getData(inpLat.value, inpLon.value)">Refresh</button><br>
+
+<script>
+	chartSetup();
+	getData(42,12);
+</script>
+  </body>
+</html>
