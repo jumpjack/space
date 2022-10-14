@@ -15,4 +15,10 @@ Moon path for period  **september 2022- november 2022** at 1481 minutes interval
 
 - **NHUGUI - NASA Horizons Unofficial Graphical User Interface**
 
+- [Ora legale](https://jumpjack.github.io/space/oralegale.html)
+
+![image](https://user-images.githubusercontent.com/1620953/195861282-606ad240-d6af-4c97-a720-f04ebab2bdfc.png)
+
+Mostra come variano le curve di alba e tramonto con e senza ora legale a seconda di latitudine e longitudine; mostra giorni particolari (più lungo, più corto, alba più anticipata, più posticipata,...)
+
 
