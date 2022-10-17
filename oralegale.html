@@ -5,15 +5,40 @@
   <meta name="generator" content="PSPad editor, www.pspad.com">
   <title>Grafico ora legale</title>
 <script src="js/Chart.bundle.js"></script>
-	  <script src="https://cdn.jsdelivr.net/gh/mourner/suncalc/suncalc.js"></script>
 <script src="https://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=https://raw.githubusercontent.com/mourner/suncalc/master/suncalc.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/mourner/suncalc/suncalc.js"></script>
 <script>
+
+// 1.1.0:
+//  Metto risultati in tabella
+//  Coloro linee di massimo/minimo
+//  Nuovo metodo di calcolo massimo/minimo
+
+// 1.0.0 - Prima versione pubblica
+
 TRACE_WIDTH = 2;
 TRACE_HIGHLIGHTED_WIDTH = 6;
 const  firstDay = new Date("2022-01-01");
 const  firstDayms = firstDay.getTime();
 
 
+COLORE_GIORNO = "#00FF00";
+
+COLORE_ALBA_LEGALE 		= "#FF0000"
+COLORE_ALBA_SOLARE 		= "#FFAAAA"
+COLORE_ALBA_PRIMA 		= "#FF4444";
+COLORE_ALBA_DOPO 		= "#FF4444";
+
+COLORE_TRAMONTO_LEGALE 	= "#0000FF";
+COLORE_TRAMONTO_SOLARE 	= "#AAAAFF";
+COLORE_TRAMONTO_PRIMA 	= "#4444FF";
+COLORE_TRAMONTO_DOPO 	= "#4444FF";
+
+INDICE_TRAMONTO_LEGALE=0
+INDICE_TRAMONTO_SOLARE=1
+INDICE_ALBA_LEGALE=2
+INDICE_ALBA_SOLARE=3
+INDICE_GIORNO = 4;
 
 const updateTooltipShow = (chart, enabled) => {
   chart.options.tooltips.enabled = enabled;
@@ -25,8 +50,8 @@ function mialabel(tooltipItem, data) {
 		data.datasets[i].borderWidth = TRACE_WIDTH;
 
 	}
-	var alba = data.datasets[0].data[tooltipItem.index];
-	var tramonto = data.datasets[2].data[tooltipItem.index];
+	var alba = data.datasets[INDICE_ALBA_SOLARE].data[tooltipItem.index];
+	var tramonto = data.datasets[INDICE_TRAMONTO_SOLARE].data[tooltipItem.index];
 	var durata = tramonto-alba;
 	finalLabel = "giorno " + tooltipItem.index + " (" + daynum_to_yyyy_mm_dd(tooltipItem.index) + ") - alba: " + epoch_to_hh_mm_ss(alba)+ "," +
 		"tramonto: " + epoch_to_hh_mm_ss(tramonto) + ", giorno: " +  epoch_to_hh_mm_ss(durata);
@@ -48,7 +73,6 @@ function config() {
         verticalLinesX: [],
         verticalLinesY: [],
 		options: {
-
 			hover: {
 				animationDuration: 0
 			},
@@ -159,8 +183,7 @@ return configVar;
   }
 
 
-function formatTime(secs)
-{
+function formatTime(secs) {
     var hours = Math.floor(secs / (60 * 60));
 
     var divisor_for_minutes = secs % (60 * 60);
@@ -181,6 +204,7 @@ function datasetTemplate(name) {
 		borderColor: "#000000",
   		fill: false,
 		lineTension: 0,
+		pointRadius : 1,
 		borderWidth : TRACE_WIDTH
 	}
 }
@@ -205,11 +229,12 @@ Chart.Tooltip.positioners.custom = function(elements, position) {
 	}
   }
 
-function showVerticaLine(num, text, color) {
-    window.myChart.config.lineAtIndex = [num];
-    window.myChart.config.verticalLinesLabels = [text];
-    window.myChart.config.verticalLinesColors = [color];
-    window.myChart.config.verticalLinesX = [5];
+function showVerticaLine(pos,num, text, color) {
+    window.myChart.config.lineAtIndex[pos] = num;
+    window.myChart.config.verticalLinesLabels[pos] = text;
+    window.myChart.config.verticalLinesColors[pos] = color;
+    window.myChart.config.verticalLinesX[pos] = 5;
+    window.myChart.config.verticalLinesY[pos] = pos*5;
     myChart.update()
 }
 
@@ -226,31 +251,27 @@ function chartSetup() {
 
 	scDataChart.datasets.push(datasetTemplate("Lunghezza giorno")); // 4
 
-  	scDataChart.datasets[0].showLine= false
-  	scDataChart.datasets[1].showLine= false;
-  	scDataChart.datasets[2].showLine= false;
-  	scDataChart.datasets[3].showLine= false;
-  	scDataChart.datasets[4].showLine= false;
+  	scDataChart.datasets[INDICE_TRAMONTO_LEGALE].showLine= false;
+  	scDataChart.datasets[INDICE_TRAMONTO_SOLARE].showLine= false
+  	scDataChart.datasets[INDICE_ALBA_LEGALE].showLine= false;
+  	scDataChart.datasets[INDICE_ALBA_SOLARE].showLine= false;
+  	scDataChart.datasets[INDICE_GIORNO].showLine= false;
 
 
-  	scDataChart.datasets[0].borderColor= "#0000FF";
-    //scDataChart.datasets[0].backgroundColor = "#FFFF00"
-    scDataChart.datasets[0].fill =  1;
+  	scDataChart.datasets[INDICE_TRAMONTO_LEGALE].borderColor= COLORE_TRAMONTO_LEGALE;
+    scDataChart.datasets[INDICE_TRAMONTO_LEGALE].fill =  1;
 
-  	scDataChart.datasets[1].borderColor= "#AAAAFF";
-    //scDataChart.datasets[1].backgroundColor = "#DDDDDD";
-    scDataChart.datasets[1].fill =  1;
+  	scDataChart.datasets[INDICE_TRAMONTO_SOLARE].borderColor= COLORE_TRAMONTO_SOLARE;
+    scDataChart.datasets[INDICE_TRAMONTO_SOLARE].fill =  1;
 
-  	scDataChart.datasets[2].borderColor= "#FF0000";
-    //scDataChart.datasets[2].backgroundColor = "#DDDDDD";
-    scDataChart.datasets[2].fill =  1;
+  	scDataChart.datasets[INDICE_ALBA_LEGALE].borderColor= COLORE_ALBA_LEGALE;
+    scDataChart.datasets[INDICE_ALBA_LEGALE].fill =  1;
 
-  	scDataChart.datasets[3].borderColor= "#FFAAAA";
-    //scDataChart.datasets[3].backgroundColor = "#DDDDDD";
-    scDataChart.datasets[3].fill =  1;
+  	scDataChart.datasets[INDICE_ALBA_SOLARE].borderColor= COLORE_ALBA_SOLARE;
+    scDataChart.datasets[INDICE_ALBA_SOLARE].fill =  1;
 
 
-  	scDataChart.datasets[4].borderColor= "#55FF55"; // dayLength
+  	scDataChart.datasets[INDICE_GIORNO].borderColor= COLORE_GIORNO; // dayLength
 
 
 	configChart.data = scDataChart;
@@ -268,20 +289,12 @@ function getData(lat,lon) {
 	sunsetData = [];
 	subtract = 0;
 
-	sunsetMin = 86400;
-	sunsetMax = 0;
-	sunriseMin = 86400;
-	sunriseMax = 0;
 	minDayLength = 86400;
 	maxDayLength = 0;
-
-    scDataChart.datasets[0].data = [];
-    scDataChart.datasets[1].data = [];
-    scDataChart.datasets[2].data = [];
-    scDataChart.datasets[3].data = [];
-    scDataChart.datasets[4].data = [];
-
-    scDataChart.labels = [];
+	sunriseMin = 86400;
+	sunriseMax = 0;
+	sunsetMin = 86400;
+	sunsetMax = 0;
 
     maxDayLengthIndex = 0;
     maxDayLength_day = "";
@@ -295,107 +308,118 @@ function getData(lat,lon) {
     sunsetMin_day = "";
     sunsetMaxIndex = 0;
     sunsetMax_day = "";
+
+    scDataChart.datasets[INDICE_TRAMONTO_LEGALE].data = [];
+    scDataChart.datasets[INDICE_TRAMONTO_SOLARE].data = [];
+    scDataChart.datasets[INDICE_ALBA_LEGALE].data = [];
+    scDataChart.datasets[INDICE_ALBA_SOLARE].data = [];
+    scDataChart.datasets[INDICE_GIORNO].data = [];
+
+    scDataChart.labels = [];
+
+	for (var a=0; a < window.myChart.config.lineAtIndex.length ; a++) {
+		showVerticaLine(a,0, "", "#000000");
+	}
+
+
 	for (var dayIndex = 0; dayIndex < 365; dayIndex+=1) {
 		currDatems = firstDayms + 86400000*dayIndex;
 		nextDatems = currDatems + 86400000;
 		currDate = new Date(currDatems);
 		nextDate = new Date(nextDatems);
 		currValues = SunCalc.getTimes(currDate, location.lat, location.lon);
-
+		if (isDST(nextDate)) {
+			subtract = 3600;
+		} else {
+			subtract = 0;
+		}
         scDataChart.labels.push(currDate.getMonth()+1);
 
 		///////////// Alba ////////////
 		if (!!(Date.parse(currValues.sunrise))) {
-			sunriseTime = currValues.sunrise.getHours()*3600 + currValues.sunrise.getMinutes()*60;
-			if (isDST(nextDate)) {
-				subtract = 3600;
-			} else {
-				subtract = 0;
-			}
-			scDataChart.datasets[2].data.push(sunriseTime);
-	        scDataChart.datasets[3].data.push(sunriseTime-subtract);
-			if (sunriseTime < sunriseMin) {
-				sunriseMin = sunriseTime;
-				sunriseMinIndex = dayIndex;
-				sunriseMin_date = new Date(firstDay.getTime() + sunriseMinIndex*86400000);
-				sunriseMin_day = sunriseMin_date.toISOString().substr(0,10);
-			}
-
-			if (sunriseTime > sunriseMax) {
-				sunriseMax = sunriseTime;
-				sunriseMaxIndex = dayIndex;
-				sunriseMax_date = new Date(firstDay.getTime() + sunriseMaxIndex*86400000);
-				sunriseMax_day = sunriseMax_date.toISOString().substr(0,10);
-			}
+			sunriseTime = currValues.sunrise.getHours()*3600 + currValues.sunrise.getMinutes()*60  + currValues.sunrise.getSeconds();
+            realSunriseTime = sunriseTime - subtract;
+			scDataChart.datasets[INDICE_ALBA_LEGALE].data.push(sunriseTime);
+	        scDataChart.datasets[INDICE_ALBA_SOLARE].data.push(realSunriseTime);
 		} else {
-//console.log("Invalid sunrise:",currValues.sunrise);
 			sunriseTime = NaN;
-			scDataChart.datasets[2].data.push(0);
-			scDataChart.datasets[3].data.push(0);
+			scDataChart.datasets[INDICE_ALBA_LEGALE].data.push(0);
+			scDataChart.datasets[INDICE_ALBA_SOLARE].data.push(0);
 		}
 
 
 		////////////// Tramonto //////////
 		if (!!(Date.parse(currValues.sunset))) {
-			sunsetTime = currValues.sunset.getHours()*3600 + currValues.sunset.getMinutes()*60;
-			if (isDST(nextDate)) {
-				subtract = 3600;
-			} else {
-				subtract = 0;
-			}
-			scDataChart.datasets[0].data.push(sunsetTime);
-			scDataChart.datasets[1].data.push(sunsetTime-subtract);
-			if (sunsetTime < sunsetMin) {
-				sunsetMin = sunsetTime;
-				sunsetMinIndex = dayIndex;
-				sunsetMin_date = new Date(firstDay.getTime() + sunsetMinIndex*86400000);
-				sunsetMin_day = sunsetMin_date.toISOString().substr(0,10);
-			}
-
-			if (sunsetTime > sunsetMax) {
-				sunsetMax = sunsetTime;
-				sunsetMaxIndex = dayIndex;
-				sunsetMax_date = new Date(firstDay.getTime() + sunsetMaxIndex*86400000);
-				sunsetMax_day = sunsetMax_date.toISOString().substr(0,10);
-			}
+			sunsetTime = currValues.sunset.getHours()*3600 + currValues.sunset.getMinutes()*60  + currValues.sunset.getSeconds();
+			realSunsetTime = sunsetTime - subtract;
+			scDataChart.datasets[INDICE_TRAMONTO_LEGALE].data.push(sunsetTime);
+			scDataChart.datasets[INDICE_TRAMONTO_SOLARE].data.push(realSunsetTime);
 		} else {
-//console.log("Invalid sunset:",currValues.sunset);
 			sunsetTime = NaN;
-			scDataChart.datasets[0].data.push(86399);
-			scDataChart.datasets[1].data.push(86399);
+			scDataChart.datasets[INDICE_TRAMONTO_LEGALE].data.push(86399);
+			scDataChart.datasets[INDICE_TRAMONTO_SOLARE].data.push(86399);
 		}
 
 
 		////////// Lunghezza giorno /////////////
 		if ((!isNaN(sunriseTime)) && (!isNaN(sunsetTime))) {
 			dayLength = sunsetTime - sunriseTime;
-        	scDataChart.datasets[4].data.push(dayLength); // dayLength
-			if (dayLength > maxDayLength) {
-				maxDayLength = dayLength;
-				maxDayLengthIndex = dayIndex;
-				maxDayLength_date = new Date(firstDay.getTime() + maxDayLengthIndex*86400000);
-				maxDayLength_day = maxDayLength_date.toISOString().substr(0,10);
-			}
-
-			if (dayLength < minDayLength) {
-				minDayLength = dayLength;
-				minDayLengthIndex = dayIndex;
-				minDayLength_date = new Date(firstDay.getTime() + minDayLengthIndex*86400000);
-				minDayLength_day = minDayLength_date.toISOString().substr(0,10);
-			}
+        	scDataChart.datasets[INDICE_GIORNO].data.push(dayLength); // dayLength
 		} else {
 		 // invalid sunrise/sunset date
-        	scDataChart.datasets[4].data.push(0); // dayLength
+        	scDataChart.datasets[INDICE_GIORNO].data.push(0); // dayLength
 		}
 	}
 
-    spn_maxDayLength.innerHTML = epoch_to_hh_mm_ss(maxDayLength) + ", giorno " + maxDayLengthIndex + " (" + maxDayLength_day +  ")";
-    spn_minDayLength.innerHTML = epoch_to_hh_mm_ss(minDayLength) + ", giorno " + minDayLengthIndex + " (" + minDayLength_day +  ")";
-    spn_sunriseMin.innerHTML = epoch_to_hh_mm_ss(sunriseMin) + ", giorno " + sunriseMinIndex + " (" + sunriseMin_day +  ")";
-    spn_sunriseMax.innerHTML = epoch_to_hh_mm_ss(sunriseMax) + ", giorno " + sunriseMaxIndex + " (" + sunriseMax_day +  ")";
-    spn_sunsetMin.innerHTML = epoch_to_hh_mm_ss(sunsetMin) + ", giorno " + sunsetMinIndex + " (" + sunsetMin_day +  ")";
-    spn_sunsetMax.innerHTML = epoch_to_hh_mm_ss(sunsetMax) + ", giorno " + sunsetMaxIndex + " (" + sunsetMax_day +  ")";
+	albaSolare = scDataChart.datasets[INDICE_ALBA_SOLARE].data;
+	sunriseMin = Math.min.apply(null, albaSolare);
+	sunriseMinIndex = albaSolare.indexOf(sunriseMin);
+	sunriseMin_date = new Date(firstDay.getTime() + sunriseMinIndex*86400000);
+	sunriseMin_day = sunriseMin_date.toISOString().substr(0,10);
 
+	sunriseMax = Math.max.apply(null, albaSolare);
+	sunriseMaxIndex = albaSolare.indexOf(sunriseMax);
+	sunriseMax_date = new Date(firstDay.getTime() + sunriseMaxIndex*86400000);
+	sunriseMax_day = sunriseMax_date.toISOString().substr(0,10);
+
+	tramontoSolare = scDataChart.datasets[INDICE_TRAMONTO_SOLARE].data;
+	sunsetMin = Math.min.apply(null, tramontoSolare);
+	sunsetMinIndex = tramontoSolare.indexOf(sunsetMin);
+	sunsetMin_date = new Date(firstDay.getTime() + sunsetMinIndex*86400000);
+	sunsetMin_day = sunsetMin_date.toISOString().substr(0,10);
+
+	sunsetMax = Math.max.apply(null,tramontoSolare);
+	sunsetMaxIndex = tramontoSolare.indexOf(sunsetMax);
+	sunsetMax_date = new Date(firstDay.getTime() + sunsetMaxIndex*86400000);
+	sunsetMax_day = sunsetMax_date.toISOString().substr(0,10);
+
+	lunghezzaGiorno = scDataChart.datasets[INDICE_GIORNO].data;
+	maxDayLength = Math.max.apply(null,lunghezzaGiorno);
+	maxDayLengthIndex = lunghezzaGiorno.indexOf(maxDayLength);
+	maxDayLength_date = new Date(firstDay.getTime() + maxDayLengthIndex*86400000);
+	maxDayLength_day = maxDayLength_date.toISOString().substr(0,10);
+
+    spn_maxDayLength_h.innerHTML = epoch_to_hh_mm_ss(maxDayLength); spn_maxDayLength_n.innerHTML = maxDayLengthIndex; spn_maxDayLength_d.innerHTML = maxDayLength_day;
+    spn_minDayLength_h.innerHTML = epoch_to_hh_mm_ss(minDayLength); spn_minDayLength_n.innerHTML = minDayLengthIndex; spn_minDayLength_d.innerHTML = minDayLength_day;
+    spn_sunriseMin_h.innerHTML   = epoch_to_hh_mm_ss(sunriseMin);   spn_sunriseMin_n.innerHTML   = sunriseMinIndex;   spn_sunriseMin_d.innerHTML   = sunriseMin_day;
+    spn_sunriseMax_h.innerHTML   = epoch_to_hh_mm_ss(sunriseMax);   spn_sunriseMax_n.innerHTML   = sunriseMaxIndex;   spn_sunriseMax_d.innerHTML   = sunriseMax_day;
+    spn_sunsetMin_h.innerHTML    = epoch_to_hh_mm_ss(sunsetMin);    spn_sunsetMin_n.innerHTML    = sunsetMinIndex;    spn_sunsetMin_d.innerHTML    = sunsetMin_day;
+    spn_sunsetMax_h.innerHTML    = epoch_to_hh_mm_ss(sunsetMax);    spn_sunsetMax_n.innerHTML    = sunsetMaxIndex;    spn_sunsetMax_d.innerHTML    = sunsetMax_day;
+
+
+	showVerticaLine(0,maxDayLengthIndex, 'giorno_max', COLORE_GIORNO);
+	showVerticaLine(1,minDayLengthIndex, 'giorno_min', COLORE_GIORNO);
+	showVerticaLine(2,sunriseMinIndex, 'alba_prima', COLORE_ALBA_PRIMA);
+	showVerticaLine(3,sunriseMaxIndex, 'alba_dopo', COLORE_ALBA_DOPO);
+	showVerticaLine(4,sunsetMinIndex, 'tram_prima', COLORE_TRAMONTO_PRIMA);
+	showVerticaLine(5,sunsetMaxIndex, 'tram_dopo', COLORE_TRAMONTO_DOPO);
+
+/*    spn_minDayLength.innerHTML = epoch_to_hh_mm_ss(minDayLength)  + "</td><td>" + minDayLengthIndex  + "</td><td>" + minDayLength_day  +  "</td>" ;
+    spn_sunriseMin.innerHTML =   epoch_to_hh_mm_ss(sunriseMin)    + "</td><td>" + sunriseMinIndex    + "</td><td>" + sunriseMin_day    +  "</td>" ;
+    spn_sunriseMax.innerHTML =   epoch_to_hh_mm_ss(sunriseMax)    + "</td><td>" + sunriseMaxIndex    + "</td><td>" + sunriseMax_day    +  "</td>" ;
+    spn_sunsetMin.innerHTML =    epoch_to_hh_mm_ss(sunsetMin)     + "</td><td>" + sunsetMinIndex     + "</td><td>" + sunsetMin_day     +  "</td>" ;
+    spn_sunsetMax.innerHTML =    epoch_to_hh_mm_ss(sunsetMax)     + "</td><td>" + sunsetMaxIndex     + "</td><td>" + sunsetMax_day     +  "</td>" ;
+*/
 	window.myChart.update();
 }
 
@@ -460,24 +484,61 @@ Chart.plugins.register(verticalLinePlugin);
   </head>
   <body>
   <center><big><big><big><big>Grafico ora legale</big></big></big></big><br>
-  v. 1.0.0 - 14/10/2022<br>
+  v. 1.1.0 - 17/10/2022<br>
   Creato con Charts.js<br>
+  <a href="https://github.com/jumpjack/space/blob/main/oralegale.html">Sorgenti</a><br>
   <br>
   </center>
 		<div style="width:1200px">
 			<canvas id="graficoOraLegale" name="graficoOraLegale" height="180">
 			</canvas>
 		</div>
-	<b>Passa il mouse sulle scritte qui sotto per evidenziare nel grafico i singoli eventi:</b><br>
-	Giorno pi&ugrave; lungo: <span id="spn_maxDayLength" name="spnmaxDayLength" onmouseover="showVerticaLine(maxDayLengthIndex, 'Giorno pi&ugrave; lungo', '#000000');">-</span><br>
-	Giorno pi&ugrave; cort: <span id="spn_minDayLength" name="spn_minDayLength" onmouseover="showVerticaLine(minDayLengthIndex, 'Giorno pi&ugrave; corto', '#000000');">-</span><br>
-	Alba pi&ugrave; anticipata: <span id="spn_sunriseMin" name="spn_sunriseMin" onmouseover="showVerticaLine(sunriseMinIndex, 'Alba pi&ugrave; anticipata', '#000000');">-</span><br>
-	Alba pi&ugrave; posticipata: <span id="spn_sunriseMax" name="spn_sunriseMax" onmouseover="showVerticaLine(sunriseMaxIndex, 'Alba pi&ugrave; posticipata', '#000000');">-</span><br>
-	Tramonto pi&ugrave; anticipato: <span id="spn_sunsetMin" name="spn_sunsetMin" onmouseover="showVerticaLine(sunsetMinIndex, 'Tramonto pi&ugrave; anticipato', '#000000');">-</span><br>
-	Tramonto pi&ugrave; posticipato: <span id="spn_sunsetMax" name="spn_sunsetMax" onmouseover="showVerticaLine(sunsetMaxIndex, 'Tramonto pi&ugrave; posticipato', '#000000');">-</span><br>
 	<br>
-	Latitutine: <input type="text" id="inpLat" name="inpLat" value = "42"><br>
-	Longitutine: <input type="text" id="inpLon" name="inpLon" value = "12"><br>
+	<table border = 1>
+	<tr><td><b>Passa il mouse sulle scritte qui sotto<br>per evidenziare nel grafico i singoli eventi</b></td>
+		<td>Giorno n.</td>
+		<td>Ora</td>
+		<td>Data</td>
+	</tr>
+	<tr><td>Giorno pi&ugrave; lungo</td>
+		<td><span id="spn_maxDayLength_n" name="spn_maxDayLength_n" >-</span></td>
+		<td><span id="spn_maxDayLength_h" name="spn_maxDayLength_h" >-</span></td>
+		<td><span id="spn_maxDayLength_d" name="spn_maxDayLength_d" >-</span></td>
+	</tr>
+	<tr>
+		<td>Giorno pi&ugrave; corto</td>
+		<td><span id="spn_minDayLength_n" name="spn_minDayLength_n" >-</span></td>
+		<td><span id="spn_minDayLength_h" name="spn_minDayLength_h" >-</span></td>
+		<td><span id="spn_minDayLength_d" name="spn_minDayLength_d" >-</span></td>
+	</tr>
+	<tr>
+		<td>Alba pi&ugrave; anticipata</td>
+		<td><span id="spn_sunriseMin_n" name="spn_sunriseMin_n" >-</span></td>
+		<td><span id="spn_sunriseMin_h" name="spn_sunriseMin_h" >-</span></td>
+		<td><span id="spn_sunriseMin_d" name="spn_sunriseMin_d" >-</span></td>
+	</tr>
+	<tr>
+		<td>Alba pi&ugrave; posticipata</td>
+		<td><span id="spn_sunriseMax_n" name="spn_sunriseMax_n">-</span></td>
+		<td><span id="spn_sunriseMax_h" name="spn_sunriseMax_h">-</span></td>
+		<td><span id="spn_sunriseMax_d" name="spn_sunriseMax_d">-</span></td>
+	</tr>
+	<tr>
+		<td>Tramonto pi&ugrave; anticipato</td>
+		<td><span id="spn_sunsetMin_n" name="spn_sunsetMin_n">-</span></td>
+		<td><span id="spn_sunsetMin_h" name="spn_sunsetMin_h">-</span></td>
+		<td><span id="spn_sunsetMin_d" name="spn_sunsetMin_d">-</span></td>
+	</tr>
+	<tr>
+		<td>Tramonto pi&ugrave; posticipato</td>
+		<td><span id="spn_sunsetMax_n" name="spn_sunsetMax_n">-</span></td>
+		<td><span id="spn_sunsetMax_h" name="spn_sunsetMax_h">-</span></td>
+		<td><span id="spn_sunsetMax_d" name="spn_sunsetMax_d">-</span></td>
+	</tr>
+	</table>
+	<br>
+	Latitudine: <input type="text" id="inpLat" name="inpLat" value = "42"><br>
+	Longitudine: <input type="text" id="inpLon" name="inpLon" value = "12"><br>
 	<button onclick="getData(inpLat.value, inpLon.value)">Refresh</button><br>
 
 <script>
