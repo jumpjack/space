@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+
+<!--
+Astrophotography ephemeris calculator bu Luca Cassioli
+
+V.0.0.3
+- Added location coordinates in console output (in both formats for Google and CesiumJS)
+- Added configurable length of lines (currently hardcoded to 100 km)
+- Added configurable start date
+
+
+V.0.0.2: Everything is working. To do:
+- add interactive text output
+- add sliders for inputs
+- make marker movable
+
+V.0.0.1: First working version. To do:
+- add marker for each calculated position
+
+
+-->
+<head>
+
+	<title>Moon ephemeris for photographers</title>
+
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+
+		<script src="suncalc.js">  </script>
+
+
+</head>
+<body>
+<center>Moon ephemeris calculator for photographers<br>
+v.0.0.3<br>
+</center>
+Tune parameters, then click on map to see moon visibility directions.<br>
+<br>
+<table>
+<tr>
+<td>
+Start date:  <input type="text" id="startDate" name="startDate" ><br>
+Max altitude: <input type="text" id="maxAlt" name="maxAlt" value=20><br>
+Min altitude: <input type="text" id="minAlt" name="minAlt" value=0><br>
+
+Max azimuth: <input type="text" id="maxAz" name="maxAz" value=180><br>
+Min azimuth: <input type="text" id="minAz" name="minAz" value=30><br>
+
+Max phase: <input type="text" id="maxPhase" name="maxPhase" value=100>%<br>
+Min phase: <input type="text" id="minPhase" name="minPhase" value=74>%<br>
+
+Next days: <input type="text" id="nextDays" name="nextDays" value=31><br>
+Step in hours: <input type="text" id="hsteps" name="hsteps" value=1><br>
+
+Status: <span id="status" name="status">-</span><br>
+<td>
+<div id="mapid" style="width: 1024px; height: 768px;"></div>
+</td>
+
+
+<script>
+
+  LINE_LENGTH_KM = 100;
+	var mymap = L.map('mapid').setView([41.9805, 12.6328], 15);
+	TODAY = new Date();
+	document.getElementById("startDate").value = TODAY;
+
+	L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+		maxZoom: 18,
+		attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
+			'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+		id: 'mapbox/streets-v11',
+		tileSize: 512,
+		zoomOffset: -1
+	}).addTo(mymap);
+
+
+	var popup = L.popup();
+
+	function onMapClick(e) {
+		startDate = document.getElementById("startDate").value;
+
+		L.polyline([
+		    [41.9805, 12.6328],
+		    [e.latlng.lat, e.latlng.lng]]
+		    ).addTo(mymap);
+
+
+    startDateJS = new Date(startDate);
+		sunpos = SunCalc.getPosition(startDateJS, e.latlng.lat,  e.latlng.lng);
+
+		markerA = L.marker([e.latlng.lat, e.latlng.lng]).addTo(mymap)
+			.bindPopup("<br>Position: "+ e.latlng.lat.toFixed(4) + " , " + e.latlng.lng.toFixed(4) +  " - Sun az: " + ((sunpos.azimuth * 180 / Math.PI)+180));
+		dest = destination(markerA.getLatLng(), (sunpos.azimuth * 180 / Math.PI)+180, 1000);
+
+	console.log("Observing from: LAT,LON  ", e.latlng.lat , ", ", e.latlng.lng);
+	console.log("Observing from: LON,LAT  ", e.latlng.lng , ", ", e.latlng.lat);
+	numSteps = nextDays.value * (24/hsteps.value);
+	console.log(numSteps);
+	for (dayIndex = 0; dayIndex < numSteps; dayIndex++) {
+		moonDate = new Date(startDateJS.getTime() + dayIndex*1000 * hsteps.value*3600);
+		moonPhase = ((SunCalc.getMoonIllumination(moonDate).fraction)*100).toFixed(0)*1.0;
+    moonpos = SunCalc.getMoonPosition(moonDate, e.latlng.lat,  e.latlng.lng);
+		moonAltitude = (moonpos.altitude*180/Math.PI).toFixed(0);
+		moonAzimuth = moonpos.azimuth*180/Math.PI;
+		moonAzimuth += 180;
+		moonAzimuth = moonAzimuth.toFixed(0);
+		fullDate = moonDate.getFullYear() + "/" + (moonDate.getMonth()+1) + "/" + moonDate.getDate()+ " " + moonDate.getHours() + ":"+ moonDate.getMinutes();
+		if ((moonPhase > minPhase.value ) && (moonPhase <= maxPhase.value)) {
+			highlight=">>>>";
+			if ((moonAltitude > minAlt.value) && (moonAltitude <= maxAlt.value)) {
+				if ((moonAzimuth*1.0 > minAz.value) && (moonAzimuth*1.0 <= maxAz.value)) {
+	        highlight += "****";
+	console.log(highlight, fullDate ,  "Phase: ", moonPhase, "Alt: ", moonAltitude , "deg", ", Az: ", moonAzimuth);
+
+	    		destClose = destination(markerA.getLatLng(), moonAzimuth*1.0, 1000);
+	    		destFar = destination(markerA.getLatLng(), moonAzimuth*1.0, LINE_LENGTH_KM *1000);
+
+					destMarker = L.marker([destClose.lat, destClose.lng]).addTo(mymap)
+					  .bindPopup("Date: " + fullDate + "<br>Altitude: " + moonAltitude +  "<br>Azimuth: " + moonAzimuth + "<br>Phase: " + moonPhase);
+
+			    L.polyline([
+				    [e.latlng.lat, e.latlng.lng],
+				    [destFar.lat, destFar.lng]]
+			    ).addTo(mymap);
+
+				}
+			}
+		} else {
+      //highlight="";
+		}
+//		console.log(highlight, fullDate ,  "Phase: ", moonPhase, "Alt: ", moonAltitude , "deg");
+//console.log("processing");
+	}
+console.log("done");
+status.innerHTML = "done";
+	}
+
+
+
+
+
+	mymap.on('click', onMapClick);
+
+
+    function destination(latlng, heading, distance) {
+		// Heading in degrees
+        heading = (heading + 360) % 360;
+        var rad = Math.PI / 180,
+            radInv = 180 / Math.PI,
+            R = 6378137, // approximation of Earth's radius
+            lon1 = latlng.lng * rad,
+            lat1 = latlng.lat * rad,
+            rheading = heading * rad,
+            sinLat1 = Math.sin(lat1),
+            cosLat1 = Math.cos(lat1),
+            cosDistR = Math.cos(distance / R),
+            sinDistR = Math.sin(distance / R),
+            lat2 = Math.asin(sinLat1 * cosDistR + cosLat1 *
+                sinDistR * Math.cos(rheading)),
+            lon2 = lon1 + Math.atan2(Math.sin(rheading) * sinDistR *
+                cosLat1, cosDistR - sinLat1 * Math.sin(lat2));
+        lon2 = lon2 * radInv;
+        lon2 = lon2 > 180 ? lon2 - 360 : lon2 < -180 ? lon2 + 360 : lon2;
+        return L.latLng([lat2 * radInv, lon2]);
+    }
+</script>
+
+</body>
+</html>
