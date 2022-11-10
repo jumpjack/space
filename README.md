@@ -25,6 +25,6 @@ Mostra come variano le curve di alba e tramonto con e senza ora legale a seconda
 
 ![image](https://user-images.githubusercontent.com/1620953/201203805-7713569b-f198-406d-b741-c173693a0685.png)
 
-- **Photocalc-cesium](https://jumpjack.github.io/space/photocalc-cesium.html)** - Graphical viewer for [PhotocalcLC](https://jumpjack.github.io/space/photocalc_LC.html) results
+- **[Photocalc-cesium](https://jumpjack.github.io/space/photocalc-cesium.html)** - Graphical viewer for [PhotocalcLC](https://jumpjack.github.io/space/photocalc_LC.html) results
 
 ![image](https://user-images.githubusercontent.com/1620953/201204320-f0fad31f-7d79-4583-b4c0-3f80e3c2c6dc.png)
