@@ -644,6 +644,7 @@ function checkErrors(ephemeris, callNumber, url) {
 			document.getElementById("status").innerHTML = "ERROR: DATE(S) NOT AVAILABLE";
 			document.getElementById("trackedTitle").innerHTML = 'Error: ' + errorString + '<br>Check errors in <a href="' + BASE_HORIZONS_URL + fullURL + '">received file</a><br>Parameters specified:<br>Start date: ' + paramStartDate + "<br>Stop date: " + paramStopDate + "<br>Timestep: " + paramTimeStep;
 			console.log('********** Error 003 in received file user-defined start/stop dates invalid: ' + errorString +"\n\nUrl:" + url);
+			extractDates();
 			return (-3);
 		}
 	}
@@ -1266,17 +1267,6 @@ function extractDates() {
 
 console.log(">>>>>>>>>>>>>",startDateString,stopDateString);
 
-/*	lastDateLineStartTemp = endOfDatesList - MAXLEN - MAXLEN/2; // Go back 1.5 lines (all lines are max 80 characters long)
-	lastDateLineStart = ephemeris.indexOf("\n", lastDateLineStartTemp) ; // Next new line SHOULD be beginning of last line...
-	lastDateLineEnd = ephemeris.indexOf("\n", lastDateLineStart + 1);
-	lastDateLineLength = lastDateLineEnd - lastDateLineStart;
-	lastDateLineContents = ephemeris.substr(lastDateLineStart, lastDateLineLength);
-
-	EpheFilename = lastDateLineContents.substr(0, filenameFieldLength);
-	startDateString = lastDateLineContents.substr(startDashesStartDate, startDateFieldLength);
-	stopDateString = lastDateLineContents.substr(startDashesStopDate, stopDateFieldLength);
-*/
-
 	START_DATE_file = startDateString.replace(/^\s+|\s+$/g, ""); // Get rid of leading and trailing spaces - https://www.toptip.ca/2010/02/javascript-trim-leading-or-trailing.html
 	END_DATE_file = stopDateString.replace(/^\s+|\s+$/g, ""); // Remove leading/trailing spaces.
 	START_DATE_url = paramStartDate.replace(/^\s+|\s+$/g, ""); // Remove leading/trailing spaces.
@@ -1299,14 +1289,6 @@ console.log("Missing start date in URL, reading from file:",START_DATE_file);
 console.log("Sart date set from URL: '" +  paramStartDate + "' --> " + START_DATE_data);
 	}
 
-
-/*	if (paramStopDate == "[missing STOP param]") {
-console.log("Stop date temporary taken from file, then will be set to tomorrow",END_DATE_file);
-	} else {
-		END_DATE_data = END_DATE_file;
-console.log("End date from URL",END_DATE_data);
-	}
-*/
 
 
 	if (paramTimeStep == "[missing STOP param]") { // TO DO: implement check for too many steps!
@@ -1382,7 +1364,7 @@ console.log("Fine grafico:",END_DATE_chart);
 	document.getElementById("txtEnd").value = END_DATE_chart.replace("%20"," ");
 	document.getElementById("txtStep").value = TIME_STEP.replace("%20"," ");
     document.getElementById("lblDates").innerHTML = "Calculated dates limits: " + START_DATE_file.replace("%20"," ") + " - " + END_DATE_file.replace("%20"," ")+ " - Outbound dates errors are not detected";
-    document.getElementById("lblDates2").innerHTML = "Dates line in file: <b>" + lastDateLineContents + "</b>";
+    document.getElementById("lblDates2").innerHTML = "Dates line in file: <b>" + lastDateLineContents + "<br><br>Note: hour+min currently not supported, please specify only date</b><br>";
 }
 
 
@@ -1475,8 +1457,10 @@ function formatNumber(num) {
 	by Luca Cassioli 2018-2022<br>
 	V. 5.2.1 - 18/NOV/2022<br>
 	<i>Created with <a href="https://plot.ly/javascript/3d-charts/">plot.ly</a></i><br>
-	<strong><big><big><big><span id="status" name="status">-76([noOrbiterName]) around @499(Mars)</span></big></big></big></strong></center><br>
+	<strong><big><big><big><span id="status" name="status"></span></big></big></big></strong></center><br>
 	<span id="trackedTitle" name="trackedTitle">--</span><br>
+	<span id="lblDates" name="lblDates"></span><br>
+	<span id="lblDates2" name="lblDates2"></span><br>
 	<span id="lblLinks2" name="lblLinks2"></span><br>
 	<br>
 	<center>
@@ -1506,9 +1490,6 @@ function formatNumber(num) {
    <input type="text" id="txtStep" name="txtStep" value="1m"> &nbsp; &nbsp;
 	<!--<button id="btnExtractDates" name="btnExtractDates" onclick="extractDates()">Latest dates</button><br>-->
 	<button id="btnManual" name="btnManual" onclick="manualCalc()">Calculate</button><br>
-	<span id="lblDates" name="lblDates">Calculated dates limits:  - 2021-1-22 13:19 - Outbound dates errors are not detected</span><br>
-	<span id="lblDates2" name="lblDates2">Dates line in file: <b>
- od179_v1_eph-edl-landed               2012-Jun-26 18:00  2012-Aug-06 05:18</b></span><br>
 	(*) use "10m" for 10 minute, "1h" for 1 hour, "1d" for 1 day,...<br>
 	<br>
 	List valid NASA Horizons code for bodies and spacecrafts: <a href="https://ssd.jpl.nasa.gov/horizons_batch.cgi?batch=1&amp;MAKE_EPHEM= 'YES'&amp;&amp;TABLE_TYPE= 'VECTORS'&amp;&amp;OUT_UNITS= 'KM-S'&amp;&amp;REF_SYSTEM= 'J2000'&amp;&amp;VEC_LABELS= 'YES'&amp;&amp;CSV_FORMAT= 'YES'&amp;&amp;OBJ_DATA= 'NO'&amp;&amp;VEC_TABLE= '2'&amp;&amp;STEP_SIZE= '1 h'&amp;&amp;START_TIME= '2018-09-1 00:00'&amp;&amp;STOP_TIME= '2018-12-03 17:01'&amp;&amp;COMMAND= '*'&amp;CENTER= '500@399'&amp;">LINK</a><br>
@@ -1558,47 +1539,8 @@ NASA Horizons web interface: <a href="https://ssd.jpl.nasa.gov/horizons.cgi?show
 <hr>
 <br>
 Italian excel table:<br>
-<textarea id="excel1" name="excel1" cols="100" rows="10">2456145,715277778
-	2012-Aug-06 05:10:00	 -3,455085966964567E+01	  3,742850180366905E+03
-9,929739841539686E+00	 -5,070789692409010E+00	 -2,318796529540720E+00
-2,119737619558741E+00	  1,248538020404999E-02	  3,743022820436686E+03
--2,266259071769363E+00
-2456145,715972222	2012-Aug-06 05:11:00	 -3,385873588858247E+02
-3,598080208310155E+03	  1,370347824852299E+02	 -5,060962542410576E+00
--2,508888164498984E+00	  2,115933131034113E+00	  1,206358939768339E-02
- 3,616573117834244E+03	 -1,942072299849976E+00
-2456145,716666667	2012-Aug-06 05:12:00	 -6,415006428665663E+02
-3,441569268172471E+03	  2,636898081834424E+02	 -5,032837588072186E+00
--2,709634463292384E+00	  2,104521854593768E+00	  1,171064368357691E-02
- 3,510762654661695E+03	 -1,578541681575192E+00
-2456145,717361111	2012-Aug-06 05:13:00	 -9,397175034351607E+02
-3,274541534744889E+03	  3,875477218134379E+02	 -4,637534289042591E+00
--2,655874850996921E+00	  1,818684760402614E+00	  1,143686387607644E-02
- 3,428685533220364E+03	 -1,059873585862430E+00
-2456145,718055556	2012-Aug-06 05:14:00	 -1,095902086630319E+03
-3,196484076330947E+03	  4,495628794999734E+02	 -1,339814050794620E+00
--5,325583189880350E-01	  4,594439720849413E-01	  1,137087593585076E-02
- 3,408902846421749E+03	 -8,055441465514249E-03
-2456145,718750000	2012-Aug-06 05:15:00	 -1,154496369097686E+03
-3,172159462601117E+03	  4,720962326762456E+02	 -7,481521114212187E-01
--3,499224257690184E-01	  2,973256144563240E-01	  1,136975732751931E-02
- 3,408567496080524E+03	 -3,107010072992896E-02
-2456145,719444444	2012-Aug-06 05:16:00	 -1,191616437933203E+03
-3,150992925685514E+03	  4,870292707079873E+02	 -5,031436685524366E-01
--3,645128831226998E-01	  2,021159323854356E-01	  1,135387879119416E-02
- 3,403807230646166E+03	 -1,323773187702166E-01
-2456145,720138889	2012-Aug-06 05:17:00	 -1,208884268646485E+03
-3,136747292586391E+03	  4,950063581916481E+02	 -1,907243921818244E-01
--1,852810795485615E-01	  9,180297551385407E-02	  1,133412120195803E-02
- 3,397884054404911E+03	 -8,981270279360377E-02
-2456145,720833333	2012-Aug-06 05:18:00	 -1,219497143673446E+03
-3,126288788898814E+03	  5,000714729018823E+02	 -1,720081758911693E-01
--1,673134410923747E-01	  7,764705139250178E-02	  1,131708127209950E-02
- 3,392775611948477E+03	 -8,090059938194472E-02
-2456145,721527778	2012-Aug-06 05:19:00	 -1,231174617482220E+03
-3,119071553046490E+03	  5,054780426044879E+02	 -1,994762660497914E-01
--9,393540041977001E-02	  9,377487834072738E-02	  1,131166275907173E-02
- 3,391151182609174E+03	  6,554246960983297E-09
+<textarea id="excel1" name="excel1" cols="100" rows="10">
+
 </textarea><br>
 <button id="btnTable1" name="btnTable1" onclick="tableSelect('excel1')">Copy to clipboard</button><br>
 <br>
