@@ -24,7 +24,7 @@ v. 4.12.0:
 
 v. 4.11.1 - Sistemato bug di bodyname
 v. 4.11.0 - Implementato mio sistema CORS
-v. 4.10.0 - Implementato timestep senza unità di misura; aggiunte varie sonde a quelle riconosciute; risolto bug di raggio specificato dall'utente non effettivamente usto.
+v. 4.10.0 - Implementato timestep senza unitÃ  di misura; aggiunte varie sonde a quelle riconosciute; risolto bug di raggio specificato dall'utente non effettivamente usto.
 			   Aggiunti link precompilati per vari EDL su Marte.
 v. 4.9.0 - Ottimizzate etichette 3d, messo autozoom 2d, corretto bug di altezza non disponibile se raggio non disponibile.
 v. 4.8.0 - Eliminati tooltip di hovering per sfera pianeta; aggiunto indicatore di posizione nell'array in tooltip traccia 3d; eliminati pulsanti zoom2d.
@@ -32,19 +32,19 @@ v. 4.7.2 - Inizio ad aggiungere tracciamento di traccia aggiuntiva tramite varia
 v. 4.7.1 - Risolto bug di timestep di url non mostrato in casella; risolto bug di mancanza marker posizione odierna in 3d e 2d
 // Da fare:
 // gestione di qualunque messaggio di errore della NASA, non solo alcuni
-// aggiungere come textbox tutti i parametri già possibili in url
-// aggiungere possibilità di tracce multiple da URL gia noti (da copiare in textbox)
+// aggiungere come textbox tutti i parametri giÃ  possibili in url
+// aggiungere possibilitÃ  di tracce multiple da URL gia noti (da copiare in textbox)
 
 v.4.7  - Aggiunto zoom 3d (anche da url; aggiungere pulsante/slider)
 v. 4.6 - Aggiungo tabella copiabile direttamente in excel italiano; aggiunte funzioni per zoom 3d manuale (per ora non accessibili a utente9
 v.4.5	Aggiunta mesh di corpo centrale sferico; corretto bug di sole non supportato come centro di rotazione; **hayabusa non funziona rispetto a ryugu*** 	
 v.4.4
 Aggiunto supporto per data inizio, data fine e timestep in URL (start,stop,step)
-Reso più robusto algoritmo di ricerca delle date disponibili (il file di input cambia formato a piacere....)
+Reso piÃ¹ robusto algoritmo di ricerca delle date disponibili (il file di input cambia formato a piacere....)
 v. 4.3 - Forse scritto algoritmo valido per estrarre date disponibili da qualsiasi file...
 v. 4.2 - Aggiungo link per "corsa a Marte": "Hope" degli Emirati Arabi, "Tianwen-1" (Giappone) e "Perseverance+Ingenuity" (USA)
 v. 4.1 - Corretto bug stringa titolo per oggetti non noti, e bug di usare sempre Marte @499; separate date-dati e date-grafico.
-V. 4.0 - Rivista completamente gestione parametri; aggiunta possibilità di specifiare punto su corpo celeste
+V. 4.0 - Rivista completamente gestione parametri; aggiunta possibilitÃ  di specifiare punto su corpo celeste
 V. 3.2 - Corretto bug che impediva tracciamento di oggetti non in archivio ma presenti su NASA Horizons
 V. 3.1 - Corretto bug di mancata assegnazione raggio corrispondente a corpo celeste selezionato (bodyRadius)
 V. 3.0 - Versione universale
@@ -55,8 +55,8 @@ V. 1.1 - 2019-08-23:
          Grafico 2d rispetto al suolo invece che rispetto al centro di grravita'.
 		 Aggiunto pallino posizione in grafico 2d.
 		 Aggiunta etichetta mancante in pallino posizione odierna.
-		 Data iniziale ora è quella odierna.
-		 Aggiunta possibilità di specificare time-step.
+		 Data iniziale ora Ã¨ quella odierna.
+		 Aggiunta possibilitÃ  di specificare time-step.
 V. 1.0 - 2019-08-22 - Derivata da 2.0 Osiris; plot.ly scaricato da remoto
 -->
 <head>
@@ -89,7 +89,7 @@ V. 1.0 - 2019-08-22 - Derivata da 2.0 Osiris; plot.ly scaricato da remoto
 	BASE_HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api?format=text"; // new api setp 2021
 	minDist = 1/0;
 	maxDist = -1;
-	LOCAL_PROXY = "http://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=";
+	LOCAL_PROXY = "https://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url=";
     finalURL = "";
     intervalPlotIndex = 0; // DEBUG - data index to plot dynamically inside setInterval
     intervalPlot = null;
