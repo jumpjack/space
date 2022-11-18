@@ -1,4 +1,7 @@
 <html><!--
+v 5.2.1
+ - Improved extraction of available dates from retrieved file.
+
 v.5.2.0
  - No more working at page opening: start/end time does not support anymore hour:min using my proxy (???), hence removed hour+min from user input (probably causing lot of new bugs...)
  - Horizons output slightly changed: removed one blank before dashes delimiting the trajectory files, preventing script from properly extracting last available dates (fixed)
@@ -37,7 +40,7 @@ v. 4.7.1 - Risolto bug di timestep di url non mostrato in casella; risolto bug d
 
 v.4.7  - Aggiunto zoom 3d (anche da url; aggiungere pulsante/slider)
 v. 4.6 - Aggiungo tabella copiabile direttamente in excel italiano; aggiunte funzioni per zoom 3d manuale (per ora non accessibili a utente9
-v.4.5	Aggiunta mesh di corpo centrale sferico; corretto bug di sole non supportato come centro di rotazione; **hayabusa non funziona rispetto a ryugu*** 	
+v.4.5	Aggiunta mesh di corpo centrale sferico; corretto bug di sole non supportato come centro di rotazione; **hayabusa non funziona rispetto a ryugu***
 v.4.4
 Aggiunto supporto per data inizio, data fine e timestep in URL (start,stop,step)
 Reso più robusto algoritmo di ricerca delle date disponibili (il file di input cambia formato a piacere....)
@@ -72,7 +75,7 @@ V. 1.0 - 2019-08-22 - Derivata da 2.0 Osiris; plot.ly scaricato da remoto
 	<style id="plotly.js-style-modebar-02919b"></style>
 	<style id="plotly.js-style-modebar-64a342"></style>
 	</head>
-	
+
 	<body>
 	<script>
     previousZoomSet = false;
@@ -80,10 +83,10 @@ V. 1.0 - 2019-08-22 - Derivata da 2.0 Osiris; plot.ly scaricato da remoto
 	markerAsterisks = "\n*******************************************************************************";
 	marker3 = "------";
 	markerDateMAXLength = "-----------------"; // yyyy/mm/dd hh:mm  Longer sequence of dashes SHOULD mark length of filename length
-	markerFileNameFieldLength =  "\n " + markerDateMAXLength; //After new line
+	markerFileNameFieldLength =  markerDateMAXLength + "---"; //After new line
 	MAXLEN = 80;
     MAX_TIMESTEPS = 10000; // Too many timesteps would result in too long file to download
-	MSperMinute = 60000; // 
+	MSperMinute = 60000; //
     TODAY_VISIBLE = false;
 	//BASE_HORIZONS_URL = "https://ssd.jpl.nasa.gov/horizons_batch.cgi?batch=1";
 	BASE_HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api?format=text"; // new api setp 2021
@@ -101,6 +104,8 @@ V. 1.0 - 2019-08-22 - Derivata da 2.0 Osiris; plot.ly scaricato da remoto
     yposArray = [];
     zposArray = [];
     speedArray = [];
+
+    SPACE_SEPARATOR = "T";
 
 	showHelp = false; // Assignd by INIT() in case page is called without parameters
 
@@ -238,7 +243,7 @@ V. 1.0 - 2019-08-22 - Derivata da 2.0 Osiris; plot.ly scaricato da remoto
 	var chartPoints2dAfter;
 	var layout;
 	var layout2d;
-	
+
 	traces3d = [];
 	traces2d = [];
 
@@ -286,7 +291,7 @@ console.log("Parametro " + text + ": " + temp);
 		param3dRangeY = getParam("3dy","[missing 3dy param]");
 		param3dRangeZ = getParam("3dz","[missing 3dz param]");
 		param3dZoom  = getParam("3dzoom","[missing 3dzoom param]");
-		
+
 		ZoomLevel3d = param3dZoom;
 
 
@@ -492,7 +497,7 @@ console.log("CONFERMATO: Ok, body " + bodyID + " known, it is " + bodyName);
 					zaxis: {
 						nticks: 10,
 						autorange: true//range: [-10, 10],
-					}					
+					}
 				}
 		  };
 
@@ -540,7 +545,7 @@ console.log(bodyID);
 console.log("orbiterID");
 console.log(orbiterID);
  	if ( ((bodyID == "") && (orbiterID =="")) || (showHelp == true)) {
-console.log("BODY o CENTER non definito."); 	
+console.log("BODY o CENTER non definito.");
 		showHelp = false;
 		fullURL =  "&COMMAND='*'&CENTER='@*'"; // Download list of bodies
 		finalURL = LOCAL_PROXY + BASE_HORIZONS_URL +   encodeURIComponent(fullURL);
@@ -604,8 +609,8 @@ console.log("### PRELOAD 002ok - Risposta ricevuta");
  			} else {
 				document.getElementById("status").innerHTML = "First data received, extracting last dates..."
 				ephemeris = clientPreload.response; // Load remote response.
-				if (checkErrors(ephemeris) <0 ) {
-console.log("****PRELOAD - Errore 001 in file ricevuto, ritorno...");				
+				if (checkErrors(ephemeris,1,BASE_HORIZONS_URL+fullURL) <0 ) {
+console.log("****PRELOAD - Errore 001 in file ricevuto, ritorno...");
 					return(-1);
 				}
 				extractDates(); // Extract last dates from file
@@ -625,25 +630,29 @@ console.log("### PRELOAD 002send- Invio richiesta a " + finalURL + " ...");
 
 
 
-function checkErrors(ephemeris) {
-	if (( ephemeris.indexOf("No ephemeris for") >= 0)  || (ephemeris.indexOf("No matches found") >= 0) ){
+function checkErrors(ephemeris, callNumber, url) {
+	if ( ephemeris.indexOf("No ephemeris for") >= 0) { // Invalid start/stop dates
 		startPos=ephemeris.indexOf("No ephemeris for");
 		endPos=ephemeris.indexOf("\n",startPos+1);
 		errorLength = endPos - startPos +1
 		errorString = ephemeris.substr(startPos, errorLength);
-		document.getElementById("status").innerHTML = "FILE ERROR";
-		document.getElementById("trackedTitle").innerHTML = 'Error: ' + errorString + '<br>Check errors in <a href="' + BASE_HORIZONS_URL + fullURL + '">received file</a><br>Parameters specified:<br>Start date: ' + paramStartDate + "<br>Stop date: " + paramStopDate + "<br>Timestep: " + paramTimeStep;
-		console.log('********** Errore 002 in file dati: ' + errorString);
-		console.log("File error, esco");
-		return(-1);
-	} else {
+
+		if (callNumber == 1) { // At first (dummy) call it is allowed to have bad results, because passed date are intentionally wrong, just to retrieve available dates.
+			console.log('********** Warning (as expected): invalid dates submitted, available dates to be read from file; url: ',url);
+			return (1);
+		} else {
+			document.getElementById("status").innerHTML = "ERROR: DATE(S) NOT AVAILABLE";
+			document.getElementById("trackedTitle").innerHTML = 'Error: ' + errorString + '<br>Check errors in <a href="' + BASE_HORIZONS_URL + fullURL + '">received file</a><br>Parameters specified:<br>Start date: ' + paramStartDate + "<br>Stop date: " + paramStopDate + "<br>Timestep: " + paramTimeStep;
+			console.log('********** Error 003 in received file user-defined start/stop dates invalid: ' + errorString +"\n\nUrl:" + url);
+			return (-3);
+		}
+	}
+
+	if (ephemeris.indexOf("No matches found") >= 0) {
+		console.log('********** Errore 004 - "no matches"');
+		return (-4);
 	}
 }
-
-
-//	{id: "-9901491",    name: "Tianwen-1"},
-//	{id: "-168",    name: "Mars2020"},
-//	{id: "-62",    name: "Hope"},
 
 
 function fillLinks() {
@@ -660,18 +669,18 @@ function fillLinks() {
 	Hayabusa2link2 = '<a href="space-explorer-tracker.html?orbiter=-37&body=@399&start=2019/11/1&stop=2020/12/20&step=30d&3dzoom=300000000">Hayabusa 2 back home</a>';
 	osirisLink = '<a href="space-explorer-tracker.html?orbiter=-64&body=@2101955">Osiris-Rex around Bennu</a>';
 	usageLink = 'Use this format for other explorers: <a href="www.example.com/space-explorer-tracker.html?body=XXXX&orbiter=YYYY&start=yyyy-mm-dd hh:mm&stop=yyyy-mm-dd hh:mm&step=xxxxd&3dzoom=1000000">space-explorer-tracker.html?body=XXXX&orbiter=YYYY&start=yyyy-mm-dd hh:mm&stop=yyyy-mm-dd hh:mm&step=xxxx&3dzoom=1000000</a><br>';
-	document.getElementById("lblLinks").innerHTML = "Precompiled links:<br><UL>" 
-	+ "<li>" + SpiritLink	
-	+ "<li>" + OpportunityLink 
+	document.getElementById("lblLinks").innerHTML = "Precompiled links:<br><UL>"
+	+ "<li>" + SpiritLink
+	+ "<li>" + OpportunityLink
 	+ "<li>" + PhoenixLink
 	+ "<li>" + InsightLink
 	+ "<li>" + MSL_Link
 	+ "<li>" + MARS2020Link
 	+ "<li>" + HopeLink
 	+ "<li>" + Tianwen1Link
-	+ "<li>" + osirisLink 
+	+ "<li>" + osirisLink
 	+ "<li>" + Hayabusa2link2
-	+ "</ul>"	
+	+ "</ul>"
 	+ usageLink + "<br><br>";
 }
 
@@ -688,15 +697,20 @@ function loadRealData(caller) {
 	// Once the empty data file has been downloaded and the real available dates extracted, update
 	// the url to download the real data file:
 	var clientRealData = new XMLHttpRequest();
-	
+
+    START_DATE_chart += " ";
+    END_DATE_chart += " ";
+	fixedStartDate = START_DATE_chart.substr(0,START_DATE_chart.indexOf(" "));  // remove time at end (no more supported?!?)
+	fixedEndDate = END_DATE_chart.substr(0,START_DATE_chart.indexOf(" ")) + "'"; // remove time at end (no more supported?!?)
+
 	switch (caller) {
 		case "first_start":
 		case "form":
 			fullURL = ""; //BASE_HORIZONS_URL; //"https://ssd.jpl.nasa.gov/horizons_batch.cgi?batch=1";
 			fullURL += "&COMMAND='" + orbiterID + "'"; // -152 = Chandrayaan2
 			fullURL += "&CENTER='" + bodyID + "'"; // 301 = Moon
-			fullURL += "&START_TIME='" + START_DATE_chart.substr(0,START_DATE_chart.indexOf(" "))  + "'";
-			fullURL += "&STOP_TIME='" + END_DATE_chart.substr(0,START_DATE_chart.indexOf(" ")) + "'";
+			fullURL += "&START_TIME='" + fixedStartDate;
+			fullURL += "&STOP_TIME='" + fixedEndDate;
 			fullURL += "&STEP_SIZE='" + TIME_STEP + "'";
 			fullURL += "&MAKE_EPHEM='YES'";
 			fullURL += "&TABLE_TYPE='VECTORS'";
@@ -735,7 +749,8 @@ console.log("Carico dati Tianwen da url manuale...");
 
 	clientRealData.open('GET', finalURL);
 	clientRealData.responseType = 'text';
-console.log ("### LOADREALDATA 001send - Apro " + finalURL + "...(caller:" + caller + ")");
+console.log("### LOADREALDATA 001send - Apro " + finalURL + "...(caller:" + caller + ")");
+console.log("### DATE: ", START_DATE_chart , END_DATE_chart);
 	clientRealData.send() // Async connection to data server.
 
 	clientRealData.onload = function() {
@@ -744,7 +759,7 @@ console.log ("### LOADREALDATA 001send - Apro " + finalURL + "...(caller:" + cal
 		document.getElementById("status").innerHTML = "Download completed";
 		alert("Data download complete, click OK to process and plot (may take a while; data length: " + clientRealData.response.length + ")");
 		document.getElementById("status").innerHTML = "Download completed";
-		processData(clientRealData, caller);
+		processData(clientRealData, caller, BASE_HORIZONS_URL + fullURL, finalURL);
 	}
 
     clientRealData.onprogress = function(event) {
@@ -772,14 +787,14 @@ function showDownloadProgress(L) {
 
 
 
-function processData(client2, caller) {
+function processData(client2, caller, url, finalU) {
 	ephemeris = client2.response; // Load remote response.
 console.log("Final data acquired: " + ephemeris.length + " bytes, caller=", caller);
 	document.getElementById("status").innerHTML = "Final data acquired";
 
-	if (checkErrors(ephemeris) < 0 ) {
-		document.getElementById("status").innerHTML = "ERROR 003";
-		console.log("ERROR 003 on url:", finalUrl)
+	if (checkErrors(ephemeris,2, url) < 0 ) {
+		document.getElementById("status").innerHTML = "ERROR 00x";
+		console.log("ERROR 00x on url:")
 		return(-1);
 	} else {
 		console.log("Ephemeris looks ok...");
@@ -793,7 +808,8 @@ console.log("Final data acquired: " + ephemeris.length + " bytes, caller=", call
 		onlyData = ephemeris.substr(dataStart, dataLength)
 	} catch (err) {
 		console.log("### ERROR 001 ### :" , err);
-		console.log("Used url:" , decodeURIComponent(fullURL));
+		console.log("Used url:" , url);
+		console.log("Encoded url:" , finalU);
 		console.log("Raw data:", ephemeris);
         document.getElementById("status").innerHTML = "Error 001 in downloaded data, cannot plot";
 		return;
@@ -802,9 +818,9 @@ console.log("Final data acquired: " + ephemeris.length + " bytes, caller=", call
 console.log("Lunghezza dati: ", onlyData.length);
 
 	if (onlyData.length*1 <= 0) {
-		console.log("### ERROR 002 ### No valid data for url:" , decodeURIComponent(fullURL));
+		console.log("### ERROR 002b ### No valid data for url:" , url, " (encoded as " , finalU , ")");
 		console.log("Raw data:", ephemeris);
-        document.getElementById("status").innerHTML = "Error 002 in downloaded data, cannot plot";
+        document.getElementById("status").innerHTML = "Error 002b in downloaded data, cannot plot";
 		return;
 	}
 
@@ -981,11 +997,11 @@ function intervalAddPoint(i, caller) {
 		document.getElementById("status").innerHTML = "Plotting " + (100*i/ephLinesArray.length).toFixed(0) + "%...";
 
 		// Extract positions:
-		xpos = xposArray[i]; 
-		ypos = yposArray[i]; 
-		zpos = zposArray[i]; 
+		xpos = xposArray[i];
+		ypos = yposArray[i];
+		zpos = zposArray[i];
 		dist = distancesArray[i];
-		speed = speedArray[i]; 
+		speed = speedArray[i];
 
 		// Extract position date:
 		dateArray[i] = lineDataArray[i][1];
@@ -1065,7 +1081,7 @@ function actualPlotting(caller){
 			break;
 	}
 
-	
+
 
 	if (caller == "add_plot1") {
 
@@ -1207,16 +1223,50 @@ function extractDates() {
 	stopDateFieldLength = endDashesStopDate - startDashesStopDate;
 
 
-	
+
 	datesStartMarker = ephemeris.toUpperCase().indexOf("SPACECRAFT TRAJECTORY");
 	if (datesStartMarker < 0) {
 		datesStartMarker = ephemeris.toUpperCase().indexOf("----------");
 	}
-	
-console.log("--------------datesStartMarker",datesStartMarker);	
-	endOfDatesList = ephemeris.indexOf("******" /*markerAsterisks*/, datesStartMarker/*startDashesLine*/); // Beginning of asterisks line after dates/files list	
-console.log("--------------endOfDatesList",endOfDatesList);	
-	lastDateLineStartTemp = endOfDatesList - MAXLEN - MAXLEN/2; // Go back 1.5 lines (all lines are max 80 characters long)
+
+	endOfDatesList = ephemeris.indexOf("******" , datesStartMarker); // Beginning of asterisks line after dates/files list
+
+	field_name = 0;
+	field_startday = 1;
+	field_starttime = 2;
+	field_stopday = 3;
+	field_stoptime = 4;
+
+	datesLinesArr = ephemeris.substr(startDashesLine,endOfDatesList-startDashesLine).split("\n");
+    lastDateLineContents = datesLinesArr[datesLinesArr.length-2];
+	lastLineArr = datesLinesArr[datesLinesArr.length-2].split(" "); // last line is empty, previous one is last valid dateline
+    fieldIndex = -1;
+    lastLineArr.forEach( (field) => {
+		if (field != "") {
+			fieldIndex++;
+		}
+        switch (fieldIndex) {
+			case field_name:
+                EpheFilename = field;
+				break;
+			case field_startday:
+                startDateString = field;
+				break;
+			case field_starttime:
+                startDateString += " " + field;
+				break;
+			case field_stopday:
+                stopDateString = field;
+				break;
+			case field_stoptime:
+                stopDateString += " " + field;
+				break;
+		}
+	});
+
+console.log(">>>>>>>>>>>>>",startDateString,stopDateString);
+
+/*	lastDateLineStartTemp = endOfDatesList - MAXLEN - MAXLEN/2; // Go back 1.5 lines (all lines are max 80 characters long)
 	lastDateLineStart = ephemeris.indexOf("\n", lastDateLineStartTemp) ; // Next new line SHOULD be beginning of last line...
 	lastDateLineEnd = ephemeris.indexOf("\n", lastDateLineStart + 1);
 	lastDateLineLength = lastDateLineEnd - lastDateLineStart;
@@ -1225,26 +1275,29 @@ console.log("--------------endOfDatesList",endOfDatesList);
 	EpheFilename = lastDateLineContents.substr(0, filenameFieldLength);
 	startDateString = lastDateLineContents.substr(startDashesStartDate, startDateFieldLength);
 	stopDateString = lastDateLineContents.substr(startDashesStopDate, stopDateFieldLength);
-
+*/
 
 	START_DATE_file = startDateString.replace(/^\s+|\s+$/g, ""); // Get rid of leading and trailing spaces - https://www.toptip.ca/2010/02/javascript-trim-leading-or-trailing.html
 	END_DATE_file = stopDateString.replace(/^\s+|\s+$/g, ""); // Remove leading/trailing spaces.
+	START_DATE_url = paramStartDate.replace(/^\s+|\s+$/g, ""); // Remove leading/trailing spaces.
 	END_DATE_url = paramStopDate.replace(/^\s+|\s+$/g, ""); // Remove leading/trailing spaces.
 
-	console.log("Start date in file", START_DATE_file);
-	console.log("Stop date in file", END_DATE_file);
-	console.log("Stop date in url", END_DATE_url);
+	console.log("Start date in file: '" + START_DATE_file + "'");
+	console.log("Stop date in file: '" + END_DATE_file + "'");
+	console.log("Start date in url: '"+ START_DATE_url + "'");
+	console.log("Stop date in url: '"+ END_DATE_url + "'");
 
 	if (paramStartDate == "[missing START param]") {
 console.log("Missing start date in URL, reading from file:",START_DATE_file);
         START_DATE_file = START_DATE_file.replace("%20"," ");
-        START_DATE_data = START_DATE_file.substr(0,START_DATE_chart.indexOf(" "));
+        START_DATE_data = START_DATE_file;//.substr(0,START_DATE_chart.indexOf(" "));  // only date, no time
+		if (START_DATE_data == '') START_DATE_data = START_DATE_file;
 	} else {
         paramStartDate = paramStartDate.replace("%20"," ");
-		START_DATE_data = paramStartDate.substr(0,paramStartDate.indexOf(" "));
+		START_DATE_data = paramStartDate;//.substr(0,paramStartDate.indexOf(" ")); // only date, no time
+		if (START_DATE_data == '') START_DATE_data = paramStartDate;
 console.log("Sart date set from URL: '" +  paramStartDate + "' --> " + START_DATE_data);
 	}
-
 
 
 /*	if (paramStopDate == "[missing STOP param]") {
@@ -1272,13 +1325,13 @@ console.log("Time step set from URL: ",TIME_STEP);
 		end_ms = dt_ms + 86400000;
 		end_dt = new Date();
 		end_dt.setTime(end_ms);
-		END_DATE_file= end_dt.getFullYear()+ "-" + (end_dt.getMonth()+1) + "-" + end_dt.getDate();// + " " + end_dt.getHours() + ":" + end_dt.getMinutes();
+		END_DATE_file= end_dt.getFullYear()+ "-" + (end_dt.getMonth()+1) + "-" + end_dt.getDate();//  + SPACE_SEPARATOR + end_dt.getHours() + ":" + end_dt.getMinutes(); // debug - time no more accepted?
 		console.log("New end date: " + END_DATE_file);
 	}
 
 	if (!isValidDate(new Date(START_DATE_data))) {
 		console.log("Invalid start date '" + START_DATE_data + "', using 'today'.");
-		START_DATE_data= dt.getFullYear() + "-" + (dt.getMonth()+1) + "-" +  dt.getDate();// + " " + dt.getHours() + ":" + dt.getMinutes();
+		START_DATE_data= dt.getFullYear() + "-" + (dt.getMonth()+1) + "-" +  dt.getDate();//  + SPACE_SEPARATOR + dt.getHours() + ":" + dt.getMinutes(); // debug - time no more accepted?
 		console.log("New start date: " + START_DATE_data);
 	}
 
@@ -1287,33 +1340,33 @@ console.log("Time step set from URL: ",TIME_STEP);
 		end_ms = dt_ms + 86400000;
 		end_dt = new Date();
 		end_dt.setTime(end_ms);
-		END_DATE_data= end_dt.getFullYear()+ "-" + (end_dt.getMonth()+1) + "-" + end_dt.getDate();// + " " + end_dt.getHours() + ":" + end_dt.getMinutes();
+		END_DATE_data= end_dt.getFullYear()+ "-" + (end_dt.getMonth()+1) + "-" + end_dt.getDate();//  + SPACE_SEPARATOR + end_dt.getHours() + ":" + end_dt.getMinutes(); // debug - time no more accepted?
 		console.log("New end date: " + END_DATE_data);
 	}
 
 
 	START_DATE_chart_ms = new Date(START_DATE_data).getTime(); // Start chart from first valid date
 	START_DATE_chart_temp= new Date(START_DATE_chart_ms);
-	START_DATE_chart = START_DATE_chart_temp.getFullYear() + "-" + (START_DATE_chart_temp.getMonth()+1) + "-" +  START_DATE_chart_temp.getDate();//+ " "+  START_DATE_chart_temp.getHours() + ":" +  START_DATE_chart_temp.getMinutes(); // DEBUG Time no more supported using my proxy?!?
+	START_DATE_chart = START_DATE_chart_temp.getFullYear() + "-" + (START_DATE_chart_temp.getMonth()+1) + "-" +  START_DATE_chart_temp.getDate();//  + SPACE_SEPARATOR+  START_DATE_chart_temp.getHours() + ":" +  START_DATE_chart_temp.getMinutes(); // DEBUG Time no more supported using my proxy?!?
 
 	if (paramStopDate == "[missing STOP param]") {
 		// Set tomorrow as default stop date:
 console.log("No stop date provided, set to 1 day after start date");
 		END_DATE_chart_ms = new Date(START_DATE_chart_ms+86400000) // End chart at first valid date plus 1 day
 		END_DATE_chart_temp= new Date(END_DATE_chart_ms);
-		END_DATE_chart = END_DATE_chart_temp.getFullYear()+ "-" + (END_DATE_chart_temp.getMonth()+1) + "-" + END_DATE_chart_temp.getDate();//+ " "+  END_DATE_chart_temp.getHours() + ":" +  END_DATE_chart_temp.getMinutes();  // DEBUG Time no more supported using my proxy?!?
+		END_DATE_chart = END_DATE_chart_temp.getFullYear()+ "-" + (END_DATE_chart_temp.getMonth()+1) + "-" + END_DATE_chart_temp.getDate();//  + SPACE_SEPARATOR+  END_DATE_chart_temp.getHours() + ":" +  END_DATE_chart_temp.getMinutes();  // DEBUG Time no more supported using my proxy?!?
 	} else {
 		if (paramStopDate == "max") {
 			// Set last available date as default stop date:
 console.log("MAX stop date requested, set to file value");
 			END_DATE_chart_ms = new Date(END_DATE_file)
 			END_DATE_chart_temp= new Date(END_DATE_chart_ms);
-			END_DATE_chart = END_DATE_chart_temp.getFullYear()+ "-" + (END_DATE_chart_temp.getMonth()+1) + "-" + END_DATE_chart_temp.getDate();//  + " "+  END_DATE_chart_temp.getHours() + ":" +  END_DATE_chart_temp.getMinutes();  // DEBUG Time no more supported using my proxy?!?
+			END_DATE_chart = END_DATE_chart_temp.getFullYear()+ "-" + (END_DATE_chart_temp.getMonth()+1) + "-" + END_DATE_chart_temp.getDate();//   + SPACE_SEPARATOR+  END_DATE_chart_temp.getHours() + ":" +  END_DATE_chart_temp.getMinutes();  // DEBUG Time no more supported using my proxy?!?
 		} else {
 console.log("using stop date provided by URL");
 			END_DATE_chart_ms = new Date(END_DATE_url)
 			END_DATE_chart_temp= new Date(END_DATE_chart_ms);
-			END_DATE_chart = END_DATE_chart_temp.getFullYear()+ "-" + (END_DATE_chart_temp.getMonth()+1) + "-" + END_DATE_chart_temp.getDate();// + " "+  END_DATE_chart_temp.getHours() + ":" +  END_DATE_chart_temp.getMinutes();  // DEBUG Time no more supported using my proxy?!?
+			END_DATE_chart = END_DATE_chart_temp.getFullYear()+ "-" + (END_DATE_chart_temp.getMonth()+1) + "-" + END_DATE_chart_temp.getDate();//  + SPACE_SEPARATOR+  END_DATE_chart_temp.getHours() + ":" +  END_DATE_chart_temp.getMinutes();  // DEBUG Time no more supported using my proxy?!?
 		}
 	}
 
@@ -1342,9 +1395,9 @@ console.log("Fine grafico:",END_DATE_chart);
 
 		loadRealData("form");
 	}
-	
-	
-	function zoomChange2d(zoomLevel) {		
+
+
+	function zoomChange2d(zoomLevel) {
 //console.log("zoomLevel", zoomLevel);
 //console.log("prima", layout2d.yaxis.range[1]*1);
 		layout2d.yaxis.range[1]=zoomLevel*1;
@@ -1417,7 +1470,7 @@ function formatNumber(num) {
 	);
 
    </script>
-   
+
 	<center><big><big><strong>Space explorer tracker</strong></big></big><br>
 	by Luca Cassioli 2018-2022<br>
 	V. 5.2.0 - 05/OCT/2022<br>
@@ -1492,60 +1545,60 @@ NASA Horizons web interface: <a href="https://ssd.jpl.nasa.gov/horizons.cgi?show
 	5: VX, VY, VZ<br>
 	6: LT, RG, RR<br>
 	<br>
-      X      X-component of position vector (km)    <br>                           
-      Y      Y-component of position vector (km)    <br>                           
-      Z      Z-component of position vector (km)                               
-      VX     X-component of velocity vector (km/sec)  <br>                         
-      VY     Y-component of velocity vector (km/sec)   <br>                        
-      VZ     Z-component of velocity vector (km/sec)  <br>                         
-      LT     One-way down-leg Newtonian light-time (sec) <br>                      
-      RG     Range; distance from coordinate center (km) <br>                      
+      X      X-component of position vector (km)    <br>
+      Y      Y-component of position vector (km)    <br>
+      Z      Z-component of position vector (km)
+      VX     X-component of velocity vector (km/sec)  <br>
+      VY     Y-component of velocity vector (km/sec)   <br>
+      VZ     Z-component of velocity vector (km/sec)  <br>
+      LT     One-way down-leg Newtonian light-time (sec) <br>
+      RG     Range; distance from coordinate center (km) <br>
       RR     Range-rate; radial velocity wrt coord. center (km/sec)   <br>
 <br>
 <hr>
 <br>
 Italian excel table:<br>
 <textarea id="excel1" name="excel1" cols="100" rows="10">2456145,715277778
-	2012-Aug-06 05:10:00	 -3,455085966964567E+01	  3,742850180366905E+03	  
-9,929739841539686E+00	 -5,070789692409010E+00	 -2,318796529540720E+00	  
-2,119737619558741E+00	  1,248538020404999E-02	  3,743022820436686E+03	 
--2,266259071769363E+00	
-2456145,715972222	2012-Aug-06 05:11:00	 -3,385873588858247E+02	  
-3,598080208310155E+03	  1,370347824852299E+02	 -5,060962542410576E+00	 
--2,508888164498984E+00	  2,115933131034113E+00	  1,206358939768339E-02	 
- 3,616573117834244E+03	 -1,942072299849976E+00	
-2456145,716666667	2012-Aug-06 05:12:00	 -6,415006428665663E+02	  
-3,441569268172471E+03	  2,636898081834424E+02	 -5,032837588072186E+00	 
--2,709634463292384E+00	  2,104521854593768E+00	  1,171064368357691E-02	 
- 3,510762654661695E+03	 -1,578541681575192E+00	
-2456145,717361111	2012-Aug-06 05:13:00	 -9,397175034351607E+02	  
-3,274541534744889E+03	  3,875477218134379E+02	 -4,637534289042591E+00	 
--2,655874850996921E+00	  1,818684760402614E+00	  1,143686387607644E-02	 
- 3,428685533220364E+03	 -1,059873585862430E+00	
-2456145,718055556	2012-Aug-06 05:14:00	 -1,095902086630319E+03	  
-3,196484076330947E+03	  4,495628794999734E+02	 -1,339814050794620E+00	 
--5,325583189880350E-01	  4,594439720849413E-01	  1,137087593585076E-02	 
- 3,408902846421749E+03	 -8,055441465514249E-03	
-2456145,718750000	2012-Aug-06 05:15:00	 -1,154496369097686E+03	  
-3,172159462601117E+03	  4,720962326762456E+02	 -7,481521114212187E-01	 
--3,499224257690184E-01	  2,973256144563240E-01	  1,136975732751931E-02	 
- 3,408567496080524E+03	 -3,107010072992896E-02	
-2456145,719444444	2012-Aug-06 05:16:00	 -1,191616437933203E+03	  
-3,150992925685514E+03	  4,870292707079873E+02	 -5,031436685524366E-01	 
--3,645128831226998E-01	  2,021159323854356E-01	  1,135387879119416E-02	 
- 3,403807230646166E+03	 -1,323773187702166E-01	
-2456145,720138889	2012-Aug-06 05:17:00	 -1,208884268646485E+03	  
-3,136747292586391E+03	  4,950063581916481E+02	 -1,907243921818244E-01	 
--1,852810795485615E-01	  9,180297551385407E-02	  1,133412120195803E-02	 
- 3,397884054404911E+03	 -8,981270279360377E-02	
-2456145,720833333	2012-Aug-06 05:18:00	 -1,219497143673446E+03	  
-3,126288788898814E+03	  5,000714729018823E+02	 -1,720081758911693E-01	 
--1,673134410923747E-01	  7,764705139250178E-02	  1,131708127209950E-02	 
- 3,392775611948477E+03	 -8,090059938194472E-02	
-2456145,721527778	2012-Aug-06 05:19:00	 -1,231174617482220E+03	  
-3,119071553046490E+03	  5,054780426044879E+02	 -1,994762660497914E-01	 
--9,393540041977001E-02	  9,377487834072738E-02	  1,131166275907173E-02	 
- 3,391151182609174E+03	  6,554246960983297E-09	
+	2012-Aug-06 05:10:00	 -3,455085966964567E+01	  3,742850180366905E+03
+9,929739841539686E+00	 -5,070789692409010E+00	 -2,318796529540720E+00
+2,119737619558741E+00	  1,248538020404999E-02	  3,743022820436686E+03
+-2,266259071769363E+00
+2456145,715972222	2012-Aug-06 05:11:00	 -3,385873588858247E+02
+3,598080208310155E+03	  1,370347824852299E+02	 -5,060962542410576E+00
+-2,508888164498984E+00	  2,115933131034113E+00	  1,206358939768339E-02
+ 3,616573117834244E+03	 -1,942072299849976E+00
+2456145,716666667	2012-Aug-06 05:12:00	 -6,415006428665663E+02
+3,441569268172471E+03	  2,636898081834424E+02	 -5,032837588072186E+00
+-2,709634463292384E+00	  2,104521854593768E+00	  1,171064368357691E-02
+ 3,510762654661695E+03	 -1,578541681575192E+00
+2456145,717361111	2012-Aug-06 05:13:00	 -9,397175034351607E+02
+3,274541534744889E+03	  3,875477218134379E+02	 -4,637534289042591E+00
+-2,655874850996921E+00	  1,818684760402614E+00	  1,143686387607644E-02
+ 3,428685533220364E+03	 -1,059873585862430E+00
+2456145,718055556	2012-Aug-06 05:14:00	 -1,095902086630319E+03
+3,196484076330947E+03	  4,495628794999734E+02	 -1,339814050794620E+00
+-5,325583189880350E-01	  4,594439720849413E-01	  1,137087593585076E-02
+ 3,408902846421749E+03	 -8,055441465514249E-03
+2456145,718750000	2012-Aug-06 05:15:00	 -1,154496369097686E+03
+3,172159462601117E+03	  4,720962326762456E+02	 -7,481521114212187E-01
+-3,499224257690184E-01	  2,973256144563240E-01	  1,136975732751931E-02
+ 3,408567496080524E+03	 -3,107010072992896E-02
+2456145,719444444	2012-Aug-06 05:16:00	 -1,191616437933203E+03
+3,150992925685514E+03	  4,870292707079873E+02	 -5,031436685524366E-01
+-3,645128831226998E-01	  2,021159323854356E-01	  1,135387879119416E-02
+ 3,403807230646166E+03	 -1,323773187702166E-01
+2456145,720138889	2012-Aug-06 05:17:00	 -1,208884268646485E+03
+3,136747292586391E+03	  4,950063581916481E+02	 -1,907243921818244E-01
+-1,852810795485615E-01	  9,180297551385407E-02	  1,133412120195803E-02
+ 3,397884054404911E+03	 -8,981270279360377E-02
+2456145,720833333	2012-Aug-06 05:18:00	 -1,219497143673446E+03
+3,126288788898814E+03	  5,000714729018823E+02	 -1,720081758911693E-01
+-1,673134410923747E-01	  7,764705139250178E-02	  1,131708127209950E-02
+ 3,392775611948477E+03	 -8,090059938194472E-02
+2456145,721527778	2012-Aug-06 05:19:00	 -1,231174617482220E+03
+3,119071553046490E+03	  5,054780426044879E+02	 -1,994762660497914E-01
+-9,393540041977001E-02	  9,377487834072738E-02	  1,131166275907173E-02
+ 3,391151182609174E+03	  6,554246960983297E-09
 </textarea><br>
 <button id="btnTable1" name="btnTable1" onclick="tableSelect('excel1')">Copy to clipboard</button><br>
 <br>
