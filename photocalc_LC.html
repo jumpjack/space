@@ -4,6 +4,14 @@
 <!--
 Astrophotography ephemeris calculator bu Luca Cassioli
 
+V 0.1.0
+- Added location data to GUI
+- Added link to exposure calculator
+- Added schematics of Sun and Moon altitude and Phase
+- Added button to clear the map
+- Added sunrise/sunset times
+
+
 V.0.0.3
 - Added location coordinates in console output (in both formats for Google and CesiumJS)
 - Added configurable length of lines (currently hardcoded to 100 km)
@@ -31,17 +39,19 @@ V.0.0.1: First working version. To do:
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
-
+		<script src="leaflet.circle-sector.js"></script>
 		<script src="suncalc.js">  </script>
 
 
 </head>
 <body>
 <center>Moon ephemeris calculator for photographers<br>
-v.0.0.3<br>
+v.0.1.0 - 30/11/2022<br>
 </center>
 Tune parameters, then click on map to see moon visibility directions.<br>
 <br>
+Use <a href="http://xjubier.free.fr/en/site_pages/astronomy/MoonExposureCalculator.html">this site</a> to calculate best exposure data to take photos of the moon.<br>
+
 <table>
 <tr>
 <td>
@@ -59,18 +69,37 @@ Next days: <input type="text" id="nextDays" name="nextDays" value=31><br>
 Step in hours: <input type="text" id="hsteps" name="hsteps" value=1><br>
 
 Status: <span id="status" name="status">-</span><br>
+<br>
+<button onclick="clearMap()">Clear map</button><br></td>
 <td>
 <div id="mapid" style="width: 1024px; height: 768px;"></div>
 </td>
+</tr>
+</table>
 
+<br>
+Observing location:<br>
+<span id="observingLocation1" name="observingLocation1">-</span><br>
+<span id="observingLocation2" name="observingLocation2">-</span><br>
 
 <script>
 
+	function clearMap() {
+		markerLayer.getLayers().forEach((m) => {
+			m.remove();
+		});
+	}
+
+
   LINE_LENGTH_KM = 100;
+	RECT_WIDTH  = 0.002;
+	RECT_HEIGHT = 0.001;
+
 	var mymap = L.map('mapid').setView([41.9805, 12.6328], 15);
 	TODAY = new Date();
 	document.getElementById("startDate").value = TODAY;
 
+  markerLayer = L.layerGroup().addTo(mymap);
 	L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
 		maxZoom: 18,
 		attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
@@ -84,25 +113,28 @@ Status: <span id="status" name="status">-</span><br>
 	var popup = L.popup();
 
 	function onMapClick(e) {
+    clearMap();
 		startDate = document.getElementById("startDate").value;
 
-		L.polyline([
+/*		L.polyline([
 		    [41.9805, 12.6328],
 		    [e.latlng.lat, e.latlng.lng]]
 		    ).addTo(mymap);
-
+*/
 
     startDateJS = new Date(startDate);
-		sunpos = SunCalc.getPosition(startDateJS, e.latlng.lat,  e.latlng.lng);
 
-		markerA = L.marker([e.latlng.lat, e.latlng.lng]).addTo(mymap)
-			.bindPopup("<br>Position: "+ e.latlng.lat.toFixed(4) + " , " + e.latlng.lng.toFixed(4) +  " - Sun az: " + ((sunpos.azimuth * 180 / Math.PI)+180));
-		dest = destination(markerA.getLatLng(), (sunpos.azimuth * 180 / Math.PI)+180, 1000);
+		markerA = L.marker([e.latlng.lat, e.latlng.lng]).addTo(markerLayer)
+			.bindPopup("<br>Observer position: <br>lat,lon,0 = "+			e.latlng.lat.toFixed(6) + " , " +			e.latlng.lng.toFixed(6) +  ",0<br>" +
+			"lon, lat,0 = " +  e.latlng.lng.toFixed(6) + "," +		e.latlng.lat.toFixed(6) + ",0<br>");
+		//dest = destination(markerA.getLatLng(), (sunpos.azimuth * 180 / Math.PI)+180, 1000);
+	  document.getElementById("observingLocation1").innerHTML = "LAT, LON, 0 = " + e.latlng.lat.toFixed(6) + ", " + e.latlng.lng.toFixed(6) + ",0";
+	  document.getElementById("observingLocation2").innerHTML = "LON, LAT, 0 = " + e.latlng.lng.toFixed(6) + ", " + e.latlng.lat.toFixed(6) + ",0";
 
-	console.log("Observing from: LAT,LON  ", e.latlng.lat , ", ", e.latlng.lng);
-	console.log("Observing from: LON,LAT  ", e.latlng.lng , ", ", e.latlng.lat);
 	numSteps = nextDays.value * (24/hsteps.value);
-	console.log(numSteps);
+
+  BASE_DIST = 1;
+	delta = 0;
 	for (dayIndex = 0; dayIndex < numSteps; dayIndex++) {
 		moonDate = new Date(startDateJS.getTime() + dayIndex*1000 * hsteps.value*3600);
 		moonPhase = ((SunCalc.getMoonIllumination(moonDate).fraction)*100).toFixed(0)*1.0;
@@ -111,24 +143,123 @@ Status: <span id="status" name="status">-</span><br>
 		moonAzimuth = moonpos.azimuth*180/Math.PI;
 		moonAzimuth += 180;
 		moonAzimuth = moonAzimuth.toFixed(0);
+		sunpos = SunCalc.getPosition(moonDate, e.latlng.lat,  e.latlng.lng);
+		sunTimes = SunCalc.getTimes(moonDate, e.latlng.lat,  e.latlng.lng);
+
+		sunRise = new Date(sunTimes.sunrise);
+		sunRiseH = sunRise.getHours();
+		sunRiseM = sunRise.getMinutes();
+
+		sunSet = new Date(sunTimes.sunset);
+		sunSetH = sunSet.getHours();
+		sunSetM = sunSet.getMinutes();
+
+		sunAz = ((sunpos.azimuth * 180 / Math.PI)+180).toFixed(0);
+		sunAlt = ((sunpos.altitude * 180 / Math.PI)).toFixed(0);
 		fullDate = moonDate.getFullYear() + "/" + (moonDate.getMonth()+1) + "/" + moonDate.getDate()+ " " + moonDate.getHours() + ":"+ moonDate.getMinutes();
 		if ((moonPhase > minPhase.value ) && (moonPhase <= maxPhase.value)) {
-			highlight=">>>>";
+			highlight="#PHASE#";
 			if ((moonAltitude > minAlt.value) && (moonAltitude <= maxAlt.value)) {
+	      highlight += "#ALT#";
 				if ((moonAzimuth*1.0 > minAz.value) && (moonAzimuth*1.0 <= maxAz.value)) {
-	        highlight += "****";
-	console.log(highlight, fullDate ,  "Phase: ", moonPhase, "Alt: ", moonAltitude , "deg", ", Az: ", moonAzimuth);
+	        highlight += "#AZ#";
+	console.log(highlight, fullDate ,  "Phase: ", moonPhase, "Alt: ", moonAltitude , "deg", ", Az: ", moonAzimuth, ", Sun Alt,Az=",sunAlt, sunAz,  sunRiseH + ":",sunRiseM  , sunSetH + ":",sunSetM );
 
-	    		destClose = destination(markerA.getLatLng(), moonAzimuth*1.0, 1000);
-	    		destFar = destination(markerA.getLatLng(), moonAzimuth*1.0, LINE_LENGTH_KM *1000);
 
-					destMarker = L.marker([destClose.lat, destClose.lng]).addTo(mymap)
-					  .bindPopup("Date: " + fullDate + "<br>Altitude: " + moonAltitude +  "<br>Azimuth: " + moonAzimuth + "<br>Phase: " + moonPhase);
+	    		destClose = destination(markerA.getLatLng(), moonAzimuth*1.0, (BASE_DIST + delta) * 1000);
+	    		destFar = destination(markerA.getLatLng(), moonAzimuth*1.0, LINE_LENGTH_KM  *1000 );
+					delta += 0.3;
+
+					destMarkerClose = L.marker([destClose.lat, destClose.lng]).addTo(markerLayer)
+					  .bindPopup("Date: " +
+						fullDate + "<br>" +
+						" Sun rise: " + sunRiseH + ":" + sunRiseM + "<br> Sun set: " +  sunSetH + ":"+sunSetM + "<br>" +
+						"Moon:<br>" +
+						"&nbsp;&nbsp;Altitude: " + 	moonAltitude + 	"&deg;<br>" +
+						"&nbsp;&nbsp;Azimuth: " + 	moonAzimuth +		"&deg;<br>" +
+						"&nbsp;&nbsp;Phase: " + 	moonPhase +	"%<br>");
+
+					popupText = destMarkerClose.getPopup().getContent()
+
+          destMarkerClose.getPopup().setContent(popupText +
+						"Sun:<br>"+
+						"&nbsp;&nbsp;Az: " +	sunAz +	"&deg;<br>"+
+						"&nbsp;&nbsp;Alt: " + sunAlt +	"&deg;"
+);
+
+					destMarkerFar = L.marker([destFar.lat, destFar.lng]).addTo(markerLayer)
+					  .bindPopup("Date: " +
+						fullDate +
+						" Sun rise: " + sunRiseH + ":" + sunRiseM + "<br> Sun set: " +  sunSetH + ":"+sunSetM + "<br>" +
+						"Moon:<br>" +
+						"&nbsp;&nbsp;Altitude: " + 	moonAltitude + 	"&deg;<br>" +
+						"&nbsp;&nbsp;Azimuth: " + 	moonAzimuth +		"&deg;<br>" +
+						"&nbsp;&nbsp;Phase: " + 	moonPhase +	"%<br>");
+
+					popupText = destMarkerFar.getPopup().getContent()
+
+          destMarkerFar.getPopup().setContent(popupText +
+						"Sun:<br>"+
+						"&nbsp;&nbsp;Az: " +	sunAz +	"&deg;<br>"+
+						"&nbsp;&nbsp;Alt: " + sunAlt +	"&deg;<br>"+
+						"Marker:<br>" +
+						"&nbsp;&nbsp;Lat:" + destMarkerFar.getLatLng().lat.toFixed(6) +	"&deg;<br>" +
+						"&nbsp;&nbsp;Lon:" + destMarkerFar.getLatLng().lng.toFixed(6) +	"&deg;<br>"
+);
+
+
 
 			    L.polyline([
 				    [e.latlng.lat, e.latlng.lng],
 				    [destFar.lat, destFar.lng]]
-			    ).addTo(mymap);
+			    ).addTo(markerLayer);
+
+
+					///////// Add images representing Sun and Moon above horizon /////////////
+					bottomLeftX = destMarkerClose.getLatLng().lng - RECT_WIDTH/2
+					bottomLeftY = destMarkerClose.getLatLng().lat - RECT_HEIGHT/2
+					topRightX = destMarkerClose.getLatLng().lng + RECT_WIDTH/2
+					topRightY = destMarkerClose.getLatLng().lat + RECT_HEIGHT/2
+
+	//console.log("[["+bottomLeftX + "," + bottomLeftY + "],[" + topRightX +"," + topRightY+ "]]");
+
+					var bounds = [[bottomLeftY, bottomLeftX], [topRightY, topRightX]];
+					L.rectangle(bounds, {color: "#ffffff", weight: 1, fillOpacity:1}).addTo(markerLayer); // white filled rectangle
+
+					sunCenterX = bottomLeftX + RECT_WIDTH/4;
+					sunCenterY = bottomLeftY + RECT_HEIGHT/2;
+
+					moonCenterX = bottomLeftX + 3*RECT_WIDTH/4;
+					moonCenterY = bottomLeftY + RECT_HEIGHT/2;
+
+          SUN_ALT_FACTOR = RECT_HEIGHT / 180;
+					sunCenterY += sunAlt * SUN_ALT_FACTOR;
+
+					L.circle([sunCenterY, sunCenterX], {radius : 10, color: "#FFAA00", fillOpacity:1}).addTo(markerLayer);
+					L.circle([moonCenterY, moonCenterX], {radius : 10, color: "#888888", fillOpacity:1}).addTo(markerLayer);
+          L.circle([moonCenterY, moonCenterX], {radius: 10, color: "#666666", fillOpacity:1}).setAngles(0, 360  * moonPhase/100).addTo(markerLayer)
+
+				/*	var sector = L.circle([moonCenterY, moonCenterX], {
+						radius: 10,
+						startAngle: 0,
+            color: "#CCCCCC",
+						fillOpacity: 1,
+						endAngle: 360  * moonPhase/100,
+					}).addTo(markerLayer);*/
+
+					bounds = [[bottomLeftY , bottomLeftX + RECT_WIDTH/2], [topRightY - RECT_HEIGHT/2 , topRightX]]; // horizon box left
+					L.rectangle(bounds, {color: "#AA0000", weight: 1, fillOpacity:0.7}).addTo(markerLayer);
+
+					bounds = [[bottomLeftY , bottomLeftX], [topRightY - RECT_HEIGHT/2 , topRightX - RECT_WIDTH/2]]; // horizon box right
+					L.rectangle(bounds, {color: "#AA0000", weight: 1, fillOpacity:0.7}).addTo(markerLayer);
+
+					bounds = [[bottomLeftY, bottomLeftX], [topRightY, topRightX]];
+					L.rectangle(bounds, {color: "#000000", weight: 2, fillOpacity:0}).addTo(markerLayer); // rectangle black border
+
+					bounds = [[bottomLeftY, bottomLeftX], [topRightY, topRightX-0.002]];
+					L.rectangle(bounds, {color: "#000000", weight: 2, fillOpacity:0}).addTo(markerLayer); // vertical separator
+
+
 
 				}
 			}
