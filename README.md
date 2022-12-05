@@ -21,7 +21,7 @@ Moon path for period  **september 2022- november 2022** at 1481 minutes interval
 
 Mostra come variano le curve di alba e tramonto con e senza ora legale a seconda di latitudine e longitudine; mostra giorni particolari (più lungo, più corto, alba più anticipata, più posticipata,...)
 
-- **[PhotocalcLC](https://jumpjack.github.io/space/photocalc_LC.html)** - Calculator for better positions to photograph full moon right above the horizon; can be used in conjunction with [photocalc-cesium](https://jumpjack.github.io/space/photocalc-cesium.html) for visualizing results.
+- **[PhotocalcLC](https://jumpjack.github.io/space/photocalc_LC.html)** - Calculator for better positions to photograph full moon right above the horizon; can be used in conjunction with [photocalc-cesium](https://jumpjack.github.io/space/photocalc-cesium.html) for visualizing results. Inspired by Peakfinder [site](https://www.peakfinder.org/it/?lat=41.74750&lng=12.73390&ele=956&azi=91.27&alt=3.56&fov=45&cfg=s&name=Maschio%20delle%20Faete)/[app](https://www.peakfinder.org/it/mobile/) and [plan-it app](https://play.google.com/store/apps/details?id=com.yingwen.photographertools&hl=en_US&gl=US) (Peakfinder does not show sky, plan-it is not completely free).
 
 ![image](https://user-images.githubusercontent.com/1620953/201203805-7713569b-f198-406d-b741-c173693a0685.png)
 
