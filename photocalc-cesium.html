@@ -62,11 +62,7 @@ Az:  <input type="text" value = "62" id = "flyaz" name="flyaz" size="20"> - Elev
 <button onclick="if (viewer.camera.frustum.fov - Cesium.Math.PI/100 >0) viewer.camera.frustum.fov -= Cesium.Math.PI/100">Zoom in</button>
 <button onclick="viewer.camera.frustum.fov += Cesium.Math.PI/100">Zoom out</button>
 <button onclick="lookDown()">Look down</button><button onclick="lookUp()">Look up</button><button onclick="northUp()">North up</button><br>
-<button onclick="moveNorthCoarse()">^^</button><br>
-<button onclick="moveNorthFine()">^</button><br>
-<button onclick="moveWest()">&lt;&lt;</button><button onclick="moveWestFine()">&lt;</button>*<button onclick="moveEastFine()">&gt;</button><button onclick="moveEast()">&gt;&gt;</button><br>
-<button onclick="moveSouthFine()">V</button><br>
-<button onclick="moveSouth()">VV</button><br>
+
 	
 
 <script src="utilsLC.js"></script> <!-- Basic drawing functions -->
@@ -332,7 +328,7 @@ function lookDown() {
 	CesiumCamera.flyTo({
 	    destination: viewer.camera.position,
 	    orientation: {
-	      //heading: Cesium.Math.toRadians(60.0),
+	      heading: viewer.camera.heading,
 	      pitch: Cesium.Math.toRadians(-90.0),
 	      roll: 0.0,
 	    },
@@ -343,7 +339,7 @@ function lookUp() {
 	CesiumCamera.flyTo({
 	    destination: viewer.camera.position,
 	    orientation: {
-	      //heading: Cesium.Math.toRadians(60.0),
+	      heading: viewer.camera.heading,
 	      pitch: Cesium.Math.toRadians(0.0),
 	      roll: 0.0,
 	    },
@@ -355,23 +351,13 @@ function northUp() {
 	    destination: viewer.camera.position,
 	    orientation: {
 	      heading: Cesium.Math.toRadians(0.0),
-	      //pitch: Cesium.Math.toRadians(0.0),
+	      pitch: viewer.camera.pitch,
 	      roll: 0.0,
 	    },
 	});
 }
 	
-function  moveWestFine() {
-	currLocRaw = document.getElementById("flyloc").value;
-	currLocArr = currLocRaw.split(",");
-	currLocLon = currLocArr[0]*1.0 - LEFT_MOVE_FINE;
-	currLocLat = currLocArr[1]*1.0;
-	currLocAlt = currLocArr[2]*1.0;
-	newLocStr = currLocLon + "," + currLocLat + "," + currLocAlt;
-	document.getElementById("flyloc").value = newLocStr;
-}
 
-// document.getElementById("flyloc").value;
 	
 function enableStandardControls(val) {
 	// disable the default event handlers
