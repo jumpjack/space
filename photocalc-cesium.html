@@ -350,6 +350,16 @@ function lookUp() {
 	});
 }
 
+function northUp() {
+	CesiumCamera.flyTo({
+	    destination: viewer.camera.position,
+	    orientation: {
+	      heading: Cesium.Math.toRadians(0.0),
+	      //pitch: Cesium.Math.toRadians(0.0),
+	      roll: 0.0,
+	    },
+	});
+}
 	
 function  moveWestFine() {
 	currLocRaw = document.getElementById("flyloc").value;
