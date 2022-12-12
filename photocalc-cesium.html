@@ -516,7 +516,9 @@ viewer.clock.onTick.addEventListener(function (clock) {
     observerCamera.moveRight(moveRate);
   }
 
-document.getElementById("status").innerHTML = "Camera pitch = " + observerCamera.pitch*180/Cesium.Math.PI + "&deg;";
+document.getElementById("status").innerHTML = "Camera Pitch/Elevation = " + (observerCamera.pitch*180/Cesium.Math.PI).toFixed(0) + "&deg;<br>" +
+	"Camera Yaw/Heading = " + (observerCamera.heading*180/Cesium.Math.PI).toFixed(0) + "&deg;<br>" +
+	"Camera FOV = " + (viewer.camera.frustum.fov*180/Cesium.Math.PI).toFixed(0) + "&deg;<br>";
 });
 
 
