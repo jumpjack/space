@@ -61,7 +61,7 @@ Az:  <input type="text" value = "62" id = "flyaz" name="flyaz" size="20"> - Elev
 <button onclick="zoomIn()">Zoom in</button>
 <button onclick="zoomOut()">Zoom out</button>
 <button onclick="lookDown()">Look down</button><button onclick="lookUp()">Look up</button><button onclick="northUp()">North up</button><br>
-
+<input type="range" step="1" value = "50" id = "rngZoom" min = "0" max  = "90" onChange="changeZoom(this)">
 
 <script src="utilsLC.js"></script> <!-- Basic drawing functions -->
 <script src="basicLC.js"></script> <!-- Cesium viewer setup -->
@@ -277,6 +277,7 @@ function  lead0(num) {
 }
 
 function gotoLocation() {
+	storeFOV = viewer.camera.frustum.fov;
   inputData = document.getElementById("flyloc").value;
   inputArray = inputData.split(",");
   inputLon = inputArray[0]*1.0;
@@ -292,7 +293,7 @@ function gotoLocation() {
           roll: 0.0,
         },
     });
-    viewer.camera.frustum.fov = Cesium.Math.toRadians(50);
+    viewer.camera.frustum.fov = storeFOV;
 
   var currentTime = Cesium.JulianDate.fromDate(new Date(document.getElementById("resultDate").value));
   var endTime = Cesium.JulianDate.addDays(currentTime, 1, new Cesium.JulianDate());
@@ -344,27 +345,36 @@ function lookDown() {
 }
 
 function lookUp() {
-  CesiumCamera.flyTo({
-      destination: viewer.camera.position,
-      orientation: {
-        heading: viewer.camera.heading,
-        pitch: Cesium.Math.toRadians(0.0),
-        roll: 0.0,
-      },
-  });
+	storeFOV = viewer.camera.frustum.fov;
+	CesiumCamera.flyTo({
+	    destination: viewer.camera.position,
+	    orientation: {
+	      heading: viewer.camera.heading,
+	      pitch: Cesium.Math.toRadians(0.0),
+	      roll: 0.0,
+	    },
+	});
+	viewer.camera.frustum.fov = storeFOV;
 }
 
 function northUp() {
-  CesiumCamera.flyTo({
-      destination: viewer.camera.position,
-      orientation: {
-        heading: Cesium.Math.toRadians(0.0),
-        pitch: viewer.camera.pitch,
-        roll: 0.0,
-      },
-  });
+	storeFOV = viewer.camera.frustum.fov;
+	CesiumCamera.flyTo({
+	    destination: viewer.camera.position,
+	    orientation: {
+	      heading: Cesium.Math.toRadians(0.0),
+	      pitch: viewer.camera.pitch,
+	      roll: 0.0,
+	    },
+	});
+	viewer.camera.frustum.fov = storeFOV;
 }
 
+
+function changeZoom() {
+ inputFOV = document.getElementById("rngZoom").value;
+ viewer.camera.frustum.fov = Cesium.Math.toRadians(inputFOV);
+}
 
 
 function enableStandardControls(val) {
