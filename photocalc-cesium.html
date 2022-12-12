@@ -330,7 +330,7 @@ function gotoClicked(dest){
 
 function lookDown() {
 	CesiumCamera.flyTo({
-	    destination: CesiumCamera.position,
+	    destination: viewer.camera.position,
 	    orientation: {
 	      //heading: Cesium.Math.toRadians(60.0),
 	      pitch: Cesium.Math.toRadians(-90.0),
@@ -341,7 +341,7 @@ function lookDown() {
 	
 function lookUp() {
 	CesiumCamera.flyTo({
-	    destination: CesiumCamera.position,
+	    destination: viewer.camera.position,
 	    orientation: {
 	      //heading: Cesium.Math.toRadians(60.0),
 	      pitch: Cesium.Math.toRadians(0.0),
