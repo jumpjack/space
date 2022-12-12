@@ -49,7 +49,6 @@ Target Azimuth: <span id="targetAz" name="targetAz">-</span><br></td>
 </tr>
 </table>
 
-
 <button onclick="proceed()">Go</button><br>
 
 Via monte sempione: <span id="dest1" name="dest1" onclick="gotoClicked(this)">12.635758, 41.993197, 667</span><br>
@@ -59,10 +58,9 @@ Terminillo: <span id="dest4" name="dest4" onclick="gotoClicked(this)">12.994630,
 Fly to: <input type="text" value="12.635758, 41.993197, 500" id="flyloc" name="flyloc" size="50"><br>
 Az:  <input type="text" value = "62" id = "flyaz" name="flyaz" size="20"> - Elev:  <input type="text" value = "-90" id = "flyel" name="flyel" size="20"> - Date:  <input type="text" value = "2021-10-23T18:04:00Z" id = "resultDate" name="resultDate"><br>
 <button onclick="gotoLocation()">Go</button><br>
-<button onclick="if (viewer.camera.frustum.fov - Cesium.Math.PI/100 >0) viewer.camera.frustum.fov -= Cesium.Math.PI/100; console.log("FOV=",viewer.camera.frustum.fov);">Zoom in</button>
-<button onclick="viewer.camera.frustum.fov += Cesium.Math.PI/100; console.log("FOV=",viewer.camera.frustum.fov);">Zoom out</button>
+<button onclick="zoomIn()">Zoom in</button>
+<button onclick="zoomOut()">Zoom out</button>
 <button onclick="lookDown()">Look down</button><button onclick="lookUp()">Look up</button><button onclick="northUp()">North up</button><br>
-
 
 
 <script src="utilsLC.js"></script> <!-- Basic drawing functions -->
@@ -70,10 +68,7 @@ Az:  <input type="text" value = "62" id = "flyaz" name="flyaz" size="20"> - Elev
 <script src="suncalc.js"></script> <!-- Mia versione modificata-->
 
 
-
-
 <script>
-
   var targetLat;
   var targetLon;
   var targetHeight;
@@ -322,6 +317,19 @@ function gotoClicked(dest){
           roll: 0.0,
         },
     });
+}
+
+function zoomIn() {
+	if (viewer.camera.frustum.fov - Cesium.Math.PI/100 >0) {
+		viewer.camera.frustum.fov -= Cesium.Math.PI/100;
+	}
+	console.log("FOV=",viewer.camera.frustum.fov);
+}
+
+
+function zoomOut() {
+	viewer.camera.frustum.fov += Cesium.Math.PI/100;
+	console.log("FOV=",viewer.camera.frustum.fov);
 }
 
 function lookDown() {
