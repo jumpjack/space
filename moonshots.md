@@ -34,7 +34,10 @@ San pietro
 ![image](https://user-images.githubusercontent.com/1620953/212405224-656e3aa1-add3-4f97-b37d-45a0f47bca93.png)   ![image](https://user-images.githubusercontent.com/1620953/212405168-8b654cad-5d39-4fbc-a6be-086e9d5be077.png)
 
 
+![image](https://user-images.githubusercontent.com/1620953/212405604-6b717f6d-8fb4-453e-945f-e6b9aa5630a6.png)
 
+ - 11/3/2023 08:09
  - 2023-03-11T07:09:48.284Z
  - 12.647007,   41.949038, 200
  - 254,0
+ - Fase: 86%
