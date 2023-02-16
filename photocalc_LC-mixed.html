@@ -1,8 +1,20 @@
+
 <!DOCTYPE html>
 <html>
+<head>
+  <title>Moon ephemeris for photographers</title>
+
+  <meta charset="utf-8" />
 
 <!--
 Astrophotography ephemeris calculator bu Luca Cassioli
+
+V. 0.5.0m
+- Added pitch/heading information for myLocations
+- Added slider/buttons for height
+- Added location tracking
+- Added altitude lock while tracking
+- Added buttons to go to location or point to location
 
 V. 0.4.0m
 - Better image for compass
@@ -14,7 +26,7 @@ V. 0.4.0m
 - Addded tooltip to lines and markers
 - todo:
 -   fix bug of bad camera line if camera is pointing to sky/moon
--   add location selection before clicking on map, to automatically set azimuth range
+-   add location selection before clicking on map, to automatically set azimuth input range
 -   reimplement "fly to location" function upon clicking location
 -   turn locations list into interactive table
 -   implement "poin to" buttons (need to implement/fix camera/target heights)
@@ -75,16 +87,14 @@ V.0.0.1: First working version. To do:
 
 
 -->
-<head>
 
-  <title>Moon ephemeris for photographers</title>
 
-  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8">
   <link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
-  <script src="https://unpkg.com/leaflet-center-cross@0.0.8/dist/leaflet.CenterCross.js"></script>
+  <!--<script src="https://unpkg.com/leaflet-center-cross@0.0.8/dist/leaflet.CenterCross.js"></script>-->
   <script src="leaflet.circle-sector.js"></script>
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.75/Build/Cesium/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.75/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
@@ -95,7 +105,7 @@ V.0.0.1: First working version. To do:
 
 <body>
 <center>Moon ephemeris calculator for photographers<br>
-v.0.4.0m - 13/feb/2023<br>
+v.0.5.0m - 17/feb/2023<br>
 </center>
 <table border=1>
 <tr>
@@ -120,11 +130,15 @@ v.0.4.0m - 13/feb/2023<br>
             To <input type="text" id="endCustomRange" name="endCustomRange" value = "2022-02-05 20:00"><br>
           </td>
           <td style="vertical-align: top;">
-            <span id="spnObserverPopup" name = "spnObserverPopup" style="vertical-align: top;">.</span>
+            <span id="spnObserverPopup" name = "spnObserverPopup" style="vertical-align: top;">
+            -
+            </span>
             <!-- popup holder -->
           </td>
           <td  style="vertical-align: top;">
-            <span id="spnLinePopup" name = "spnLinePopup"  style="vertical-align: top;">.</span>
+            <span id="spnLinePopup" name = "spnLinePopup"  style="vertical-align: top;">
+            -
+            </span>
             <!-- popup holder -->
           </td>
         </tr>
@@ -145,7 +159,7 @@ v.0.4.0m - 13/feb/2023<br>
                 to
             </td>
             <td>
-                <input type="text" id="maxAlt" name="maxAlt" value=20 size=3>
+                <input type="text" id="maxAlt" name="maxAlt" value=10 size=3>
             </td>
         </tr>
 
@@ -157,13 +171,13 @@ v.0.4.0m - 13/feb/2023<br>
                 From
             </td>
             <td>
-                <input type="text" id="minAz" name="minAz" value=30 size=3>
+                <input type="text" id="minAz" name="minAz" value=0 size=3>
             </td>
             <td>
                 to
             </td>
             <td>
-                <input type="text" id="maxAz" name="maxAz" value=180 size=3>
+                <input type="text" id="maxAz" name="maxAz" value=360 size=3>
             </td>
         </tr>
 
@@ -194,7 +208,7 @@ v.0.4.0m - 13/feb/2023<br>
 
             </td>
             <td>
-                <input type="text" id="nextDays" name="nextDays" value=1 size=3>
+                <input type="text" id="nextDays" name="nextDays" value=30 size=3>
             </td>
         </tr>
 
@@ -206,7 +220,7 @@ v.0.4.0m - 13/feb/2023<br>
 
             </td>
             <td>
-                <input type="text" id="substeps" name="substeps" value=5 size=3><br>
+                <input type="text" id="substeps" name="substeps" value=3 size=3><br>
             </td>
         </tr>
       </table> <!-- End map parameters -->
@@ -231,7 +245,7 @@ v.0.4.0m - 13/feb/2023<br>
         </td>
       </tr>
         <tr>
-          <td>
+          <td style="vertical-align: top;">
           <!-- Radioboxes: -->
             <span>
               <input type="radio" id="camera" name="subject" value="camera" checked>
@@ -251,14 +265,31 @@ v.0.4.0m - 13/feb/2023<br>
             Look at direction from here: <button onclick="">PDH</button><br>
           </td>
           <td>
-            Status:<br>
-            <span id="statusCesium" name="statusCesium">-</span><br>
-            <button onclick="copyForGoogle()">Show pos (lat/lon)</button> - <span id="spnGoogle" name="spnGoogle"></span><br>
-            <br>
+            <table border = 1>
+              <tr>
+                <td>Moon alt:</td> <td><span id="spnMoonAlt" name ="spnMoonAlt"></span></td>
+              </tr>
+              <tr>
+                <td>Moon az:</td> <td><span id="spnMoonAz" name ="spnMoonAz"></span></td>
+              </tr>
+              <tr>
+                <td>Camera pitch/el:</td> <td><span id="spnCameraPitchEl" name ="spnCameraPitchEl"></span></td>
+              </tr>
+              <tr>
+                <td>Camera yaw/heading:</td> <td><span id="spnCameraYawHeading" name ="spnCameraYawHeading"></span></td>
+              </tr>
+              <tr>
+                <td>Camera FOV</td> <td><span id="spnCameraFOV" name ="spnCameraFOV"></span></td>
+              </tr>
+              <tr>
+                <td>Camera location</td> <td width = 200><span id="spnCameraLoc" name ="spnCameraLoc"></span></td>
+              </tr>
+            </table>
           </td>
         </tr>
         <tr>
             <td>
+              Manual input: <br>
               From: <input type="text" value="41.993197, 12.635758, 300" id="flyLocGoogle" name="flyLocGoogle" size="22" >
             <button onclick="posFromMap()">Map center</button>
              <button onclick="posFromObserver()">Observer</button><br>
@@ -267,12 +298,8 @@ v.0.4.0m - 13/feb/2023<br>
               <button onclick="gotoLocation()">Fly to</button><br>
             </td>
             <td>
+            Locations:<br>
             <span id = "spnLocations" name="spnLocations"></span>
-            <!--  Via monte sempione: <span id="dest1" name="dest1" onclick="gotoClicked(this)">12.635758, 41.993197, 667</span><br>
-              Monte Gennaro: <span id="dest2" name="dest2" onclick="gotoClicked(this)">12.800230, 42.060897, 2181</span><br>
-              San Pietro: <span id="dest3" name="dest3" onclick="gotoClicked(this)">12.453384, 41.902139, 592</span><br>
-              Terminillo: <span id="dest4" name="dest4" onclick="gotoClicked(this)">12.994630,  42.471523, 5537</span><br>
-              -->
             </td>
         </tr>
       </table>
@@ -280,36 +307,93 @@ v.0.4.0m - 13/feb/2023<br>
 
     </td>
     <td>
-     <div id="cesiumContainer" style="width: 640px; height: 400px;"></div><br>
-     <div id="toolbar" style="hud.setAttribute('style', 'background: rgba(42,42,42,0.9); border-radius: 5px; display: block');">PIPPO</div>
-        <table border=1>
-          <tr>
-            <td>
-              <button onclick="lookUp()">^</button>
-            </td>
-            <td>
-              <button onclick="lookDown()">v</button>
-            </td>
-            <td>
-              <button onclick="northUp()">N</button>
-            </td>
-            <td>
-              <button onclick="lookAtMoon()">Moon</button>
-            </td>
-            <td>
-            <input type="checkbox" id = "chkGPS" name = "chkGPS"> GPS
-            </td>
-            <td>
-            <input type="checkbox" id = "chkSync2D" name = "chkSync2D"> sync from 2D
-            </td>
-            <td style="vertical-align: top;">
-              Zoom:
-              <button onclick="zoomOut()">-</button>
-              <input style="vertical-align: bottom;"type="range" step="1" value = "50" id = "rngZoom" name = "rngZoom" min = "1" max  = "89" onChange="changeZoom()">
-              <button onclick="zoomIn()">+</button>
-            </td>
-          </tr>
-        </table>
+      <table border = 1>
+        <tr>
+          <td>
+            <div id="cesiumContainer" style="width: 640px; height: 400px;"></div>
+          </td>
+          <td>
+            <table border =0>
+              <tr>
+                <td>
+                Height
+                </td>
+              </tr>
+              <tr>
+                <td>
+                <button onclick="heightPlus()">+</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <input style="vertical-align: bottom;"type="range" orient="vertical" step="10" value = "200" id = "rngHeight" name = "rngHeight" min = "1" max  = "10000" onChange="changeHeight()">
+                </td>
+              </tr>
+              <tr>
+                <td>
+                <button onclick="heightMinus()">-</button>
+                </td>
+              </tr>
+            </table>
+          </td>
+          <td>
+            <table border = 0>
+              <tr>
+                <td>
+                Zoom
+                </td>
+              </tr>
+              <tr>
+                <td>
+                <button onclick="zoomIn()">+</button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                <input style="vertical-align: bottom;"type="range" orient="vertical" step="1" value = "50" id = "rngZoom" name = "rngZoom" min = "1" max  = "89" onChange="changeZoom()">
+                </td>
+              </tr>
+              <tr>
+                <td>
+                <button onclick="zoomOut()">-</button>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      <table border=1>
+        <tr>
+          <td>
+            <button onclick="lookUp()">^</button>
+          </td>
+          <td>
+            <button onclick="lookDown()">v</button>
+          </td>
+          <td>
+            <button onclick="northUp()">N</button>
+          </td>
+          <td>
+            <button onclick="lookAtMoon()">Moon</button>
+          </td>
+          <td>
+          <input type="checkbox" id = "chkGPS" name = "chkGPS"> GPS
+          </td>
+          <td>
+          <input type="checkbox" id = "chkSync2D" name = "chkSync2D"> Sync from 2D
+          <input type="checkbox" id = "chkTrack" name = "chkTrack"> Track
+          <input type="checkbox" id = "chkLockH" name = "chkLockH"> Lock height
+          <input type="text" id = "lockedHeight" name="lockedHeight" size=4 value = 200>
+          </td>
+          <td style="vertical-align: top;">
+            <button onclick = "resetRoll()">Reset roll</button>
+          </td>
+        </tr>
+      </table>
+      Camera controls:<br>
+       - Rotate: SHIFT + LEFTMOUSE<br>
+       - Move: WASD + PE<br>
+      Rotate world: CTRL + LEFTMOUSE<br>
     </td>
   </tr>
         <tr>
@@ -344,35 +428,52 @@ Use <a href="http://xjubier.free.fr/en/site_pages/astronomy/MoonExposureCalculat
 
 
 <script>
+
 ////////////// Cesium management
-  var targetLatRad;
-  var targetLonRad;
-  var targetLatDeg;
-  var targetLonDeg;
-  var targetHeight;
-  var targetAvailable;
-  var cameraLongitudeDeg;
-  var cameraLatitudeDeg;
-  var cameraLongitudeRad;
-  var cameraLatitudeRad;
-  var cameraHeight;
-  var cameraAvailable;
-  var ellipsoid = Cesium.Ellipsoid.WGS84;// viewer.scene.globe.ellipsoid;
-  var cameraControlsEnabled = false;
-  var currTime = new Date().getTime();
-  var baseTime = new Date().getTime();
-  var prevLine;
-  var eventEnabled = false;
-
-
+var targetLatRad;
+var targetLonRad;
+var targetLatDeg;
+var targetLonDeg;
+var targetHeight;
+var targetAvailable;
+var cameraLongitudeDeg;
+var cameraLatitudeDeg;
+var cameraLongitudeRad;
+var cameraLatitudeRad;
+var cameraHeight;
+var cameraAvailable;
+var ellipsoid = Cesium.Ellipsoid.WGS84;
+var cameraControlsEnabled = false;
+var currTime = new Date().getTime();
+var baseTime = new Date().getTime();
+var prevLine;
+var eventEnabled = false;
 selectedLine = -1;
+bufLineTarget = null;
+bufMarkerObserver = null;
+myLines = [];
+mymap = null;
+markerLayer = null;
+moonLine = null;
+oldHeight =0;
+manuallySetHeight = false;
+locationHeightAvailble = false;
 
-
-
-const CAMERA_PITCH_CORRECTION_RAD = 1 * Cesium.Math.PI/180;
+const LINE_LENGTH_KM = 100;
+const RECT_WIDTH  = 0.002;
+const RECT_HEIGHT = 0.001;
+const STEP_SECONDS = 600;
+const CAMERA_PITCH_CORRECTION_RAD = 2 * Cesium.Math.PI/180;
+const CAMERA_HEADING_CORRECTION_RAD = 2.70 * Cesium.Math.PI/180;
 const DEFAULT_LINE_COLOR = "#8888AA";
 const HIGHLIGHT_LINE_COLOR = "#000000";
 const MOON_LINE_COLOR = "#333333";
+const TYPE_LOOK = 1;
+const TYPE_GOTO = 2;
+const LOC_MOON = -1;
+const LOC_SUN = -2;
+
+pointedLocation = LOC_MOON;
 
 scene = viewer.scene;
 CesiumCamera = new Cesium.Camera(scene);
@@ -383,31 +484,15 @@ var mousePosition;
 
 var flags = {
   looking: false,
-  moveForward: false,
-  moveBackward: false,
-  moveUp: false,
-  moveDown: false,
-  moveLeft: false,
-  moveRight: false,
+  moveForward: false,   // W
+  moveBackward: false,  // S
+  moveUp: false,        // Q
+  moveDown: false,      // E
+  moveLeft: false,      // A
+  moveRight: false,     // D
 };
 
-bufLineTarget = null;
-bufMarkerObserver = null;
 
-///// Go to start position /////
-CesiumCamera.flyTo({
-    destination: Cesium.Cartesian3.fromDegrees(12.635758, 41.993197, 667),
-    orientation: {
-      //heading: Cesium.Math.toRadians(60.0),
-      pitch: Cesium.Math.toRadians(-90.0),
-      roll: 0.0,
-    },
-});
-
-
-// By default, the `camera.changed` event will trigger when the camera has changed by 50%
-// To make it more sensitive, we can bring down this sensitivity
-viewer.camera.percentageChanged = 0.01;
 
 /// Add cross at center of Cesium view ////////
 var rect = document.createElement("div");
@@ -420,22 +505,6 @@ rect.style.top = '-200px';
 rect.style.left = '320px';
 rect.innerHTML = "X";
 /////
-
-changeZoom(); // as per zoom slider
-
-dayTable = document.createElement("table");
-dayTable.border = 1;
-drawTableHeader("xx/xx/xxxx");
-createDayRow(0,"xx","xx", "xxx", "xxx", "xxx", "xxx", "xxx", "xx", "xx", "xx", "xx");
-dayTable.appendChild(row);
-tblResults.appendChild(dayTable);
-
-
-function copyForGoogle() {
-  googleString = (viewer.camera.positionCartographic.latitude*180/Cesium.Math.PI).toFixed(6) + "," + (viewer.camera.positionCartographic.longitude*180/Cesium.Math.PI).toFixed(6);
-  spnGoogle.innerHTML = googleString;
-}
-
 
 
 function posFromMap() {
@@ -482,11 +551,30 @@ function destFromLine() {
 
 
 
+
+function onMapDrag(e){
+    var pos =  mymap.getCenter();
+    document.getElementById("status").innerHTML = pos.lat.toFixed(6) + ", " + pos.lng.toFixed(6);
+    updateLocationLines();
+    updateCameraLine();
+    if (chkSync2D.checked) {
+      syncCesium();
+    }
+}
+
+
+
 function syncCesium() {
+  ////// Sync from 2d to 3d
   storeFOV = viewer.camera.frustum.fov;
   storeHeading = viewer.camera.heading;
   storePitch = viewer.camera.pitch;
-  storeHeight = Cesium.Cartographic.fromCartesian(viewer.camera.position).height;
+  if (manuallySetHeight) {
+    storeHeight = rngHeight.value *1.0;
+    manuallySetHeight = false;
+  } else {
+    storeHeight = Cesium.Cartographic.fromCartesian(viewer.camera.position).height;
+  }
 
   var pos =  mymap.getCenter();
   inputLon = pos.lng;
@@ -502,10 +590,17 @@ function syncCesium() {
       duration : 0
   });
   viewer.camera.frustum.fov = storeFOV;
+
+  updateLocationLines();
+  updateCameraLine();
+  updateLookDirection();
+
 }
 
 
+
 function syncMap() {
+////// Sync from 3d to 2d
   var storeMapZoom = mymap.getZoom()
   inputLon = viewer.camera.positionCartographic.longitude*180/Cesium.Math.PI;
   inputLat = viewer.camera.positionCartographic.latitude*180/Cesium.Math.PI;
@@ -513,37 +608,350 @@ function syncMap() {
 }
 
 
-function findMoon() {
-  var tempLat = viewer.camera.positionCartographic.latitude*180/Cesium.Math.PI;
-  var tempLon = viewer.camera.positionCartographic.longitude*180/Cesium.Math.PI;
-  var tempAlt = viewer.camera.positionCartographic.height.toFixed(0);
-  var now = viewer.clock.currentTime.toString();
-  var nowJS = new Date(now)
-  moonpos = SunCalc.getMoonPosition(nowJS, tempLat,  tempLon);
-  moonAlt = moonpos.altitude - CAMERA_PITCH_CORRECTION_RAD;
-  if (moonpos.azimuth < 0)  {
-    moonAz = Cesium.Math.PI + moonpos.azimuth;
+
+function findMoon(dateJS, lat, lon) {
+  ///// Calculate Elevation and Azimuth of Moon as seen from given position
+  var moonData = SunCalc.getMoonPosition(dateJS, lat,  lon);
+  var moonAlt = moonData.altitude - CAMERA_PITCH_CORRECTION_RAD;
+  var moonAz = 999;
+  if (moonData.azimuth < 0)  {
+    moonAz = Cesium.Math.PI + moonData.azimuth;
   } else {
-    moonAz = Cesium.Math.PI + moonpos.azimuth;
+    moonAz = Cesium.Math.PI + moonData.azimuth;
   }
+  moonAz += CAMERA_HEADING_CORRECTION_RAD;
+  return (
+    {
+      altRad:  moonAlt,
+      azRad:   moonAz,
+      altDeg : moonAlt * 180 / Cesium.Math.PI,
+      azDeg :  moonAz  * 180 / Cesium.Math.PI
+    }
+  );
 }
 
 
+function findMoonCesium(dateJS, lat, lon) {
+    var pointA = new Cesium.Cartesian3.fromDegrees(lon, lat,  0);
+    var pointB = Cesium.Simon1994PlanetaryPositions.computeMoonPositionInEarthInertialFrame(Cesium.JulianDate.fromDate(dateJS));
+
+    const transform=Cesium.Transforms.eastNorthUpToFixedFrame(pointA);
+    const positionvector=Cesium.Cartesian3.subtract(pointB,pointA,new Cesium.Cartesian3());
+    const vector=Cesium.Matrix4.multiplyByPointAsVector(Cesium.Matrix4.inverse(transform,new Cesium.Matrix4()),positionvector,new Cesium.Cartesian3());
+    const direction=Cesium.Cartesian3.normalize(vector,new Cesium.Cartesian3());
+
+    //heading
+    const headingRadRaw = Math.atan2(direction.y, direction.x) - Cesium.Math.PI_OVER_TWO;
+    const headingRadFixed = Cesium.Math.PI - Cesium.Math.zeroToTwoPi(headingRadRaw);
+    const headingDegFixed = Cesium.Math.toDegrees(Cesium.Math.PI - Cesium.Math.zeroToTwoPi(headingRadFixed));
+
+    //pitch
+    const pitchRad = Cesium.Math.PI_OVER_TWO - Cesium.Math.acosClamped(direction.z);
+    const pitchDeg = Cesium.Math.toDegrees(Cesium.Math.PI_OVER_TWO - Cesium.Math.acosClamped(direction.z));
+
+    if ((headingDegFixed<0)) {
+      headingDegFixed2 = - headingDegFixed;
+    } else {
+      headingDegFixed2 = 360 - headingDegFixed;
+    }
+
+  return (
+    {
+      altRad: pitchRad,
+      azRad: headingDegFixed2 * Math.PI/180,
+      altDeg : pitchRad * 180 / Cesium.Math.PI,
+      azDeg : headingDegFixed2
+    }
+  );
+}
+
+
+/////////
+var PI   = Math.PI,
+    sin  = Math.sin,
+    cos  = Math.cos,
+    tan  = Math.tan,
+    asin = Math.asin,
+    atan = Math.atan2,
+    acos = Math.acos,
+    rad  = PI / 180;
+
+
+var dayMs = 1000 * 60 * 60 * 24,
+    J1970 = 2440588,
+    J2000 = 2451545;
+
+var e = rad * 23.4397; // obliquity of the Earth
+
+function sunCalc_rightAscension(l, b) { return atan(sin(l) * cos(e) - tan(b) * sin(e), cos(l)); }
+function sunCalc_declination(l, b)    { return asin(sin(b) * cos(e) + cos(b) * sin(e) * sin(l)); }
+function sunCalc_toJulian(date) { return date.valueOf() / dayMs - 0.5 + J1970; }
+function sunCalc_fromJulian(j)  { return new Date((j + 0.5 - J1970) * dayMs); }
+function sunCalc_toDays(dateJS)   { return sunCalc_toJulian(dateJS) - J2000; }
+function sunCalc_siderealTime(d, lw) { return rad * (280.16 + 360.9856235 * d) - lw; }
+function sunCalc_azimuth(H, phi, dec)  { return atan(sin(H), cos(H) * sin(phi) - tan(dec) * cos(phi)); }
+function sunCalc_altitude(H, phi, dec) { return asin(sin(phi)* sin(dec) + cos(phi) * cos(dec) * cos(H)); }
+
+function AltAzFromRAdec(dateJS, RAdeg, DecDeg, LatDeg, LngDeg) {
+  DecRad = DecDeg * 3.14 / 180;
+  LatRad = LatDeg * 3.14 / 180;
+  TimeDecimal = dateJS.getHours() + dateJS.getMinutes() / 60 + dateJS.getSeconds() / 3600;
+  LSTdeg = 100.46 + 0.985647 * ((dateJS.valueOf() / 86400000 - 0.5 + J1970) - J2000) + LngDeg + 15*TimeDecimal;
+  alt = asin(sin(LatRad) * sin(DecRad) + cos(LatRad) * cos(DecRad) * cos(LSTdeg - RAdeg));
+  az  = atan(sin(LSTdeg - RAdeg), cos(LSTdeg - RAdeg) * sin(LatRad) - tan(DecRad) * cos(LatRad));
+  return ({altRad : alt, azRad : az});
+
+/*
+  getAlt = () => {
+    return asin(sin(dec*toRad)*sin(lat*toRad)+cos(dec*toRad)*cos(lat*toRad)*cos(ha()*toRad))/toRad;
+  }
+
+  getAz = () => {
+    let az = acos( (sin(D)-sin(A)*sin(L)) / (cos(A)*cos(L))  );
+    if(sin(ha()*toRad) > 0){az = 360 - az;}
+    return az;
+  }
+  */
+
+
+}
+
+/*
+LSTdeg = 100.46 + 0.985647 * ((date.valueOf() / 86400000 - 0.5 + J1970) - J2000) + LNG + 15*TimeDecimal
+      asin(sin(phi) * sin(dec) + cos(phi) * cos(dec) * cos(H)))
+alt = asin(sin(LAT) * sin(DEC) + cos(LAT) * cos(DEC) * cos(LSTdeg - RAdeg))
+
+az  = atan(sin(H), cos(H) * sin(phi) - tan(dec) * cos(phi))
+az  = atan(sin(LSTdeg - RAdeg), cos(LSTdeg - RAdeg) * sin(LAT) - tan(DEC) * cos(LAT))
+
+
+*/
+function sunCalc_moonCoords(julianDays) { // geocentric ecliptic coordinates of the moon
+
+    var L = rad * (218.316 + 13.176396 * julianDays), // ecliptic longitude
+        M = rad * (134.963 + 13.064993 * julianDays), // mean anomaly
+        F = rad * (93.272 + 13.229350 * julianDays),  // mean distance
+
+        l  = L + rad * 6.289 * sin(M), // longitude
+        b  = rad * 5.128 * sin(F),     // latitude
+        dt = 385001 - 20905 * cos(M);  // distance to the moon in km
+
+    return {
+        ra: sunCalc_rightAscension(l, b),
+        dec: sunCalc_declination(l, b),
+        dist: dt
+    };
+}
+
+function SunCalc_getMoonPosition(date, lat, lng) {
+    var lw  = rad * -lng,
+        phi = rad * lat,
+        d   = toDays(date),
+
+        c = sunCalc_moonCoords(d),
+        H = sunCalc_siderealTime(d, lw) - c.ra,
+        h = altitude(H, phi, c.dec),
+        // formula 14.1 of "Astronomical Algorithms" 2nd edition by Jean Meeus (Willmann-Bell, Richmond) 1998.
+        pa = atan(sin(H), tan(phi) * cos(c.dec) - sin(c.dec) * cos(H));
+
+    h = h + astroRefraction(h); // altitude correction for refraction
+
+    return {
+        azimuth: azimuth(H, phi, c.dec),
+        altitude: h,
+        distance: c.dist,
+        parallacticAngle: pa
+    };
+};
+
+
+    function lookAtMoonCesium(camera, date, lat, lng) {
+      const icrfToFixed = new Cesium.Matrix3();
+      if (!(Cesium.Transforms.computeIcrfToFixedMatrix(date, icrfToFixed))) {
+        Cesium.Transforms.computeTemeToPseudoFixedMatrix(date, icrfToFixed);
+      }
+
+      moonPosition = Cesium.Simon1994PlanetaryPositions.computeMoonPositionInEarthInertialFrame(
+        date
+      );
+      Cesium.Matrix3.multiplyByVector(icrfToFixed, moonPosition, moonPosition);
+
+      myObserver = new Cesium.Cartesian3.fromDegrees(lng, lat,  0);
+      myPositionvector=Cesium.Cartesian3.subtract(myObserver, moonPosition, new Cesium.Cartesian3());
+      viewer.camera.flyTo({
+          destination: viewer.camera.position,
+          orientation: myPositionvector,
+      });
+      /*viewer.camera.viewBoundingSphere(
+        new Cesium.BoundingSphere(moonPosition,  100000000)
+      );*/
+    }
+
+
+/////////
+
 
 function lookAtMoon() {
-  findMoon();
+  var now = viewer.clock.currentTime.toString();
+  var nowJS = new Date(now)
+  var tempLat = viewer.camera.positionCartographic.latitude  * 180 / Cesium.Math.PI;
+  var tempLon = viewer.camera.positionCartographic.longitude * 180 / Cesium.Math.PI;
+  var moonData = findMoon(nowJS, tempLat, tempLon);
   storeFOV = viewer.camera.frustum.fov;
   viewer.camera.flyTo({
       destination: viewer.camera.position,
-      //destination: Cesium.Cartesian3.fromDegrees(tempLon, tempLat, tempAlt),
       orientation: {
-        heading: moonAz,
-        pitch: moonAlt,
+        heading: moonData.azRad,
+        pitch: moonData.altRad,
         roll: 0.0,
       },
   });
   viewer.camera.frustum.fov = storeFOV;
 }
+
+
+
+
+function lookAt(locnum, type) { // type = 1 LOOK, =2 GOTO
+var cartographic;
+var positions;
+
+  if (locnum < 0) {
+    // track moon or sun (debug: to do)
+    return;
+  }
+
+  if (chkLockH.checked) {  // observer height locked: use it, then check if location height is needed
+    observerHeight = lockedHeight.value * 1.0;
+
+      if(!chkTrack.checked) { // if tracking is not active, query also for location height
+console.log("Not tracking, query location height...");
+        var cartographic2 = Cesium.Cartographic.fromDegrees( myLocations[locnum].lng, myLocations[locnum].lat, 5000, new Cesium.Cartographic());
+        var positions2 = [ cartographic2 ];
+        var promiseLoc = Cesium.sampleTerrain(viewer.terrainProvider, 11, positions2);
+        Cesium.when(promiseLoc, function( updatedPositions2 ) {
+          locationHeight = updatedPositions2[0].height;
+console.log("Location height 1 received.",locationHeight);
+          // All data available: point camera:
+        console.log(type, observerHeight, locationHeight)
+        internalLookAt(type, observerHeight, locationHeight, locnum)
+        });
+      } else { // if tracking is active, location height could have been already queried
+console.log("Tracking...");
+        if (!locationHeightAvailble) { // if location height has not yet been queried, query for it
+console.log("Height not avail, querying...");
+          var cartographic3 = Cesium.Cartographic.fromDegrees( myLocations[locnum].lng, myLocations[locnum].lat, 5000, new Cesium.Cartographic());
+          var positions3 = [ cartographic3 ];
+          var promiseLoc2 = Cesium.sampleTerrain(viewer.terrainProvider, 11, positions3);
+          Cesium.when(promiseLoc2, function( updatedPositions3 ) {
+            locationHeight = updatedPositions3[0].height;
+console.log("Location height 2 received.",observerHeight, locationHeight);
+            locationHeightAvailble = true; // at end of promise
+console.log("Pointing camera...",type, observerHeight, locationHeight);
+        console.log(type, observerHeight, locationHeight)
+        internalLookAt(type, observerHeight, locationHeight, locnum)
+
+      });
+        } else { // locationHeightAvailble
+console.log("Height already avail, pointing and done.");
+console.log("Pointing camera...",type, observerHeight, locationHeight);
+        console.log(type, observerHeight, locationHeight)
+        internalLookAt(type, observerHeight, locationHeight, locnum)
+
+      } // locationHeightAvailble
+    } // if tracking is active
+
+  } else { // if observer height is not locked, query for it,  then, if needed, also location height:
+    ///// query observer height
+    cartographic = Cesium.Cartographic.fromDegrees( mymap.getCenter().lng, mymap.getCenter().lat, 5000, new Cesium.Cartographic());
+    positions = [ cartographic ];
+    var promiseObs = Cesium.sampleTerrain(viewer.terrainProvider, 11, positions);
+console.log("Querying height for observer...");
+    Cesium.when(promiseObs, function( updatedPositions ) {
+      observerHeight = updatedPositions[0].height;
+console.log("Observer height received.",observerHeight);
+      if(!chkTrack.checked) { // if tracking is not active, query also for location height
+console.log("Not tracking, query location height...");
+        var cartographic2 = Cesium.Cartographic.fromDegrees( myLocations[locnum].lng, myLocations[locnum].lat, 5000, new Cesium.Cartographic());
+        var positions2 = [ cartographic2 ];
+        var promiseLoc = Cesium.sampleTerrain(viewer.terrainProvider, 11, positions2);
+        Cesium.when(promiseLoc, function( updatedPositions2 ) {
+          locationHeight = updatedPositions2[0].height;
+console.log("Location height 1 received.",locationHeight);
+          // All data available: point camera:
+        console.log(type, observerHeight, locationHeight)
+        internalLookAt(type, observerHeight, locationHeight, locnum)
+        });
+      } else { // if tracking is active, location height could have been already queried
+console.log("Tracking...");
+        if (!locationHeightAvailble) { // if location height has not yet been queried, query for it
+console.log("Height not avail, querying...");
+          var cartographic3 = Cesium.Cartographic.fromDegrees( myLocations[locnum].lng, myLocations[locnum].lat, 5000, new Cesium.Cartographic());
+          var positions3 = [ cartographic3 ];
+          var promiseLoc2 = Cesium.sampleTerrain(viewer.terrainProvider, 11, positions3);
+          Cesium.when(promiseLoc2, function( updatedPositions3 ) {
+            locationHeight = updatedPositions3[0].height;
+console.log("Location height 2 received.",observerHeight, locationHeight);
+            locationHeightAvailble = true; // at end of promise
+console.log("Pointing camera...",type, observerHeight, locationHeight);
+        console.log(type, observerHeight, locationHeight)
+        internalLookAt(type, observerHeight, locationHeight, locnum)
+
+      });
+        } else { // locationHeightAvailble
+console.log("Height already avail, pointing and done.");
+console.log("Pointing camera...",type, observerHeight, locationHeight);
+        console.log(type, observerHeight, locationHeight)
+        internalLookAt(type, observerHeight, locationHeight, locnum)
+
+      } // locationHeightAvailble
+      } // if tracking is active
+    });
+
+  }
+}
+
+
+function internalLookAt(type, observerHeight, locationHeight,locnum) {
+console.log("Pointing camera...",type, observerHeight, locationHeight);
+      // Both heights for observer and location are available; build both objects and use them to ask for Altitude and Azimuth of location w.r.t observer:
+      var observerPos = {lat:  mymap.getCenter().lat, lng: mymap.getCenter().lng , height : observerHeight};
+      var locationPos = {lat: myLocations[locnum].lat, lng: myLocations[locnum].lng , height : locationHeight};
+
+      // Now that all data are available, calculate pointing data:
+      var locationDir = getAltAz(observerPos, locationPos);
+      var locationAlt = locationDir.pitchDeg;
+      var locationAz = locationDir.headingDeg;
+
+console.log("Look at " ,locationAlt , locationAz);
+
+      // Point camera in that direction:
+      var storeFOV = viewer.camera.frustum.fov;
+      if (type === TYPE_LOOK) { // look at
+      viewer.camera.setView({
+          destination: Cesium.Cartesian3.fromDegrees(  mymap.getCenter().lng , mymap.getCenter().lat, observerHeight), // Go to observer position,....
+          orientation: { // ... and look at location
+            heading: locationAz * 3.14/180,
+            pitch: locationAlt * 3.14/180,
+            roll: 0.0,
+          },
+      });
+      }
+
+      if (type === TYPE_GOTO) { // go to
+        viewer.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees( myLocations[locnum].lng,  myLocations[locnum].lat, locationHeight), // Go to location position,....
+            orientation: { // ... and keep viewing direction unchanged.
+              heading: viewer.camera.heading,
+              pitch: viewer.camera.pitch,
+              roll: 0.0,
+            },
+        });
+      }
+
+      viewer.camera.frustum.fov = storeFOV;
+}
+
 
 
 function gotoLocation() {
@@ -578,8 +986,9 @@ function gotoLocation() {
 
 
 
+
 function zoomIn() {
-  if (rngZoom.value > rngZoom.min) {
+  if (rngZoom.value*1 + 5.0 < rngZoom.max ) {
     rngZoom.value  = rngZoom.value*1 + 5.0 ;
     changeZoom();
   }
@@ -587,13 +996,14 @@ function zoomIn() {
 
 
 
+
 function zoomOut() {
-console.log("out1rngZoom=",rngZoom.value,rngZoom.min,rngZoom.max);
-  if (rngZoom.value < rngZoom.max) {
+  if (rngZoom.value*1 -5.0 > rngZoom.min) {
     rngZoom.value  = rngZoom.value*1 - 5.0 ;
     changeZoom();
   }
 }
+
 
 
 
@@ -602,6 +1012,47 @@ function changeZoom() {
   viewer.camera.frustum.fov = Cesium.Math.toRadians(inputFOV);
 }
 
+
+function heightPlus() {
+  setCameraHeight(moveRate);
+}
+
+
+
+function heightMinus() {
+setCameraHeight(-moveRate);
+}
+
+
+function changeHeight() {
+  var deltaHeight = rngHeight.value * 1.0 - oldHeight;
+  setCameraHeight(deltaHeight);
+}
+
+function resetRoll() {
+  viewer.camera.flyTo({
+        destination: viewer.camera.position,
+        orientation: {
+          heading: viewer.camera.heading,
+          pitch: viewer.camera.pitch,
+          roll: 0.0,
+        },
+        duration : 0
+    });
+}
+
+function setCameraHeight (deltaHeight) {
+  d = cameraUpDirection(deltaHeight);
+  viewer.camera.flyTo({
+        destination: d.upPos,
+        orientation: {
+          heading: viewer.camera.heading,
+          pitch: viewer.camera.pitch,
+          roll: 0.0,
+        },
+        duration : 0
+    });
+}
 
 
 function lookDown() {
@@ -670,192 +1121,153 @@ handler.setInputAction(function (position) {
 
 //////////////// CESIUM KEYBOARD MANAGEMENT ////////////////
 
-function getFlagForKeyCode(keyCode) {
-  switch (keyCode) {
-    case "W".charCodeAt(0):
-      return "moveForward";
-    case "S".charCodeAt(0):
-      return "moveBackward";
-    case "Q".charCodeAt(0):
-      return "moveUp";
-    case "E".charCodeAt(0):
-      return "moveDown";
-    case "D".charCodeAt(0):
-      return "moveRight";
-    case "A".charCodeAt(0):
-      return "moveLeft";
-    default:
-      return undefined;
-  }
-}
-
-document.addEventListener(
-  "keydown",
-  function (e) {
-    var flagName = getFlagForKeyCode(e.keyCode);
-    if (typeof flagName !== "undefined") {
-      flags[flagName] = true;
+  function getFlagForKeyCode(keyCode) {
+    switch (keyCode) {
+      case "W".charCodeAt(0):
+        return "moveForward";
+      case "S".charCodeAt(0):
+        return "moveBackward";
+      case "Q".charCodeAt(0):
+        return "moveUp";
+      case "E".charCodeAt(0):
+        return "moveDown";
+      case "D".charCodeAt(0):
+        return "moveRight";
+      case "A".charCodeAt(0):
+        return "moveLeft";
+      default:
+        return undefined;
     }
-  },
-  false
-);
+  }
 
-document.addEventListener(
-  "keyup",
-  function (e) {
-    var flagName = getFlagForKeyCode(e.keyCode);
-    if (typeof flagName !== "undefined") {
-      flags[flagName] = false;
+  document.addEventListener(
+    "keydown",
+    function (e) {
+      var flagName = getFlagForKeyCode(e.keyCode);
+      if (typeof flagName !== "undefined") {
+        flags[flagName] = true;
+      }
+    },
+    false
+  );
+
+  document.addEventListener(
+    "keyup",
+    function (e) {
+      var flagName = getFlagForKeyCode(e.keyCode);
+      if (typeof flagName !== "undefined") {
+        flags[flagName] = false;
+      }
+    },
+    false
+  );
+
+  viewer.clock.onTick.addEventListener(function (clock) {
+
+
+
+    // Change movement speed based on the distance of the camera to the surface of the ellipsoid.
+    var cameraHeight = ellipsoid.cartesianToCartographic(viewer.camera.position).height;
+    moveRate = cameraHeight / 100.0;
+
+    if (flags.moveForward) {    // W
+      viewer.camera.moveForward(moveRate);
     }
-  },
-  false
-);
+    if (flags.moveBackward) {  // S
+      viewer.camera.moveBackward(moveRate);
+    }
+    if (flags.moveUp) {        // Q
+      viewer.camera.moveUp(moveRate);
+    }
+    if (flags.moveDown) {      // E
+      viewer.camera.moveDown(moveRate);
+    }
+    if (flags.moveLeft) {      // A
+      viewer.camera.moveLeft(moveRate);
+    }
+    if (flags.moveRight) {     // D
+      viewer.camera.moveRight(moveRate);
+    }
 
-viewer.clock.onTick.addEventListener(function (clock) {
-  observerCamera = viewer.camera;
-  var tempLat = (observerCamera.positionCartographic.latitude*180/Cesium.Math.PI).toFixed(6);
-  var tempLon = (observerCamera.positionCartographic.longitude*180/Cesium.Math.PI).toFixed(6);
-  var tempAlt = (observerCamera.positionCartographic.height).toFixed(0);
-  findMoon(); // calculate moonAlt and moonAz
-  document.getElementById("statusCesium").innerHTML = "Moon alt: " + (moonAlt*180/3.14).toFixed(2) + "<br>" +
-    "Moon az: " + (moonAz*180/3.14).toFixed(2) + "<br>" +
-    "Camera Pitch/Elevation = " + (observerCamera.pitch*180/Cesium.Math.PI).toFixed(2) + "&deg;<br>" +
-    "Camera Yaw/Heading = " + (observerCamera.heading*180/Cesium.Math.PI).toFixed(2) + "&deg;<br>" +
-    "Camera FOV = " + (viewer.camera.frustum.fov*180/Cesium.Math.PI).toFixed(0) + "&deg;<br>" +
-    "Camera location:<br>" +
-    "Lat, Lon, Alt (Google): " +  tempLat + ", " + tempLon + ", " + tempAlt + "m<br>" +
-    "Lon, Lat, Alt (Cesium): " +  tempLon + ", " + tempLat + ", " + tempAlt + "m<br>";
+    if (chkGPS.checked) {
+      if (currTime - baseTime > 10000) {
+  console.log("GPS request.");
+        baseTime = new Date().getTime();
+        navigator.geolocation.getCurrentPosition(
+          (success) => {
+  console.log("GPS OK:",success.coords.latitude,success.coords.longitude, success.altitude);
 
-  // Change movement speed based on the distance of the camera to the surface of the ellipsoid.
-  var cameraHeight = ellipsoid.cartesianToCartographic(observerCamera.position).height;
-  var moveRate = cameraHeight / 100.0;
+            inputLon = success.coords.longitude;
+            inputLat = success.coords.latitude;
+            var cartographic = Cesium.Cartographic.fromDegrees(  inputLon, inputLat, 5000, new Cesium.Cartographic());
 
-  if (flags.moveForward) {
-    observerCamera.moveForward(moveRate);
-  }
-  if (flags.moveBackward) {
-    observerCamera.moveBackward(moveRate);
-  }
-  if (flags.moveUp) {
-    observerCamera.moveUp(moveRate);
-  }
-  if (flags.moveDown) {
-    observerCamera.moveDown(moveRate);
-  }
-  if (flags.moveLeft) {
-    observerCamera.moveLeft(moveRate);
-  }
-  if (flags.moveRight) {
-    observerCamera.moveRight(moveRate);
-  }
-  if (chkGPS.checked) {
-    if (currTime - baseTime > 10000) {
-console.log("GPS request.");
-      baseTime = new Date().getTime();
-      navigator.geolocation.getCurrentPosition(
-        (success) => {
-console.log("GPS OK:",success.coords.latitude,success.coords.longitude, success.altitude);
+            lookAtMoon(); // calculates moon position and point it  -   debug: user option needed to track moon?
 
-          inputLon = success.coords.longitude;
-          inputLat = success.coords.latitude;
-          var cartographic = Cesium.Cartographic.fromDegrees(  inputLon, inputLat, 5000, new Cesium.Cartographic());
+            // Temporarily go to GPS position but at approximate height from ellipsoid, then retrieve actual height (it can take some time):
+            if (success.coords.altitude) {
+              GPSalt = success.coords.altitude;
+            } else {
+              GPSalt = cartographic.height;
+            }
 
-          lookAtMoon(); // calculates global moonAlt and moonAz -   debug: user option needed to track moon?
-
-          // Temporarily go to GPS position but at approximate height from ellipsoid, then retrieve actual height (it can take some time):
-          if (success.coords.altitude) {
-            GPSalt = success.coords.altitude;
-          } else {
-            GPSalt = cartographic.height;
+            // Retrieve actual height:
+            var positions = [ cartographic ];
+            GPSheightPromise = Cesium.sampleTerrain(viewer.terrainProvider, 11, positions);
+  console.log("Requesting GPS height for ", cartographic, ": ",GPSheightPromise);
+            Cesium.when(GPSheightPromise, function( updatedPositions ) {
+              height = updatedPositions[0].height;
+  console.log(">>>>>>>>>> Updating GPS position with height.");
+              flyLocGoogle.value = inputLat.toFixed(6) + "," + inputLon.toFixed(6) + "," + (height + 100.0).toFixed(0);
+              // Reposition using now actual height:
+              var tempDate2 = Cesium.JulianDate.toDate(viewer.clock.currentTime);
+              var moonDataGPS = findMoon(tempDate2, inputLat, inputLon);
+              CesiumCamera.flyTo({
+                  destination: Cesium.Cartesian3.fromDegrees(success.coords.longitude, success.coords.latitude, height + 100.0),
+                  orientation: {
+                    heading: moonDataGPS.azRad,
+                    pitch: moonDataGPS.altRad,
+                    roll: 0.0,
+                  }, // camera orientation
+              }); // Cesium flyto
+            }); // Cesium promise completion
+          }, // navigator getCurrentPosition()
+          (error) => {
+            console.log("GPS Error:",error);
           }
-
-          CesiumCamera.flyTo({
-              destination: Cesium.Cartesian3.fromDegrees(success.coords.longitude, success.coords.latitude, GPSalt),
-              orientation: {
-                heading: moonAz,
-                pitch: moonAlt,
-                roll: 0.0,
-              },
-          });
+        );
+      } else {
+        currTime = new Date().getTime();
+      }
+    } // checkGPS
 
 
-          // Retrieve actual height:
-          var positions = [ cartographic ];
-          GPSheightPromise = Cesium.sampleTerrain(viewer.terrainProvider, 11, positions);
-console.log("Requesting GPS height for ", cartographic, ": ",GPSheightPromise);
-          Cesium.when(GPSheightPromise, function( updatedPositions ) {
-            height = updatedPositions[0].height;
-console.log(">>>>>>>>>> Updating GPS position with height.");
-            flyLocGoogle.value = inputLat.toFixed(6) + "," + inputLon.toFixed(6) + "," + (height + 100.0).toFixed(0);
-            // Reposition using now actual height:
-            CesiumCamera.flyTo({
-                destination: Cesium.Cartesian3.fromDegrees(success.coords.longitude, success.coords.latitude, height + 100.0),
-                orientation: {
-                  heading: moonAz,
-                  pitch: moonAlt,
-                  roll: 0.0,
-                }, // camera orientation
-            }); // Cesium flyto
-          }); // Cesium promise completion
-        }, // navigator getCurrentPosition()
-        (error) => {
-          console.log("GPS Error:",error);
-        }
-      );
+    if (chkSync2D.checked) {
+      manuallySetHeight = false;
+      if (eventEnabled) {
+        viewer.camera.changed.removeEventListener(syncMap);
+        eventEnabled = false;
+      }
+      //syncCesium();
     } else {
-      currTime = new Date().getTime();
-    }
-  } // checkGPS
-
-  if (chkSync2D.checked) {
-    if (eventEnabled) {
-      viewer.camera.changed.removeEventListener(syncMap);
-      eventEnabled = false;
-    }
-    syncCesium();
-  } else {
-    if (!eventEnabled) {
-      viewer.camera.changed.addEventListener(syncMap);
-      eventEnabled = true;
-    }
-  } // chkSync2d
+      //manuallySetHeight = true;
+      if (!eventEnabled) {
+console.log("Enable syncmap");
+        viewer.camera.changed.addEventListener(syncMap);
+        eventEnabled = true;
+      }
+    } // chkSync2d
 
 
-/////////// Draw line pointing to camera direction /////////
-    var height = Cesium.Cartographic.fromCartesian(viewer.camera.position).height
-    var pitchRad = Cesium.Math.PI  -viewer.camera.pitch;
-    var lineLength = height / Math.tan(pitchRad);
-    if (lineLength > 100000) {
-      lineLength = 100000
-    }
-    var mapCenter = mymap.getCenter();
-    var cameraDest = destination(mymap.getCenter(),viewer.camera.heading * 180 / 3.14, (lineLength));
-    cameraLine.setLatLngs([[mapCenter.lat,mapCenter.lng],[cameraDest.lat, cameraDest.lng]]);
-///////////////
 
 
-  // Setup my locations lines:
-  myLocationsCount = 0;
-  myLocations.forEach((location) => {
-      var mapCenter = mymap.getCenter();
-      var myLocationDest = {lat : location.lat, lng: location.lng};
-      myLocationLine[myLocationsCount].setLatLngs([[mapCenter.lat,mapCenter.lng],[myLocationDest.lat, myLocationDest.lng]]);
-      myLocationLine[myLocationsCount].bringToFront();
-      myLocationLine[myLocationsCount].addEventListener("click", onLocationClicked);
-      //myLocationLine[myLocationsCount].addEventListener("mouseover", onLocationOver);
-      myLocationsCount++;
-  });
 
 
-});//viewer.clock.onTick.addEventListener
+  });//viewer.clock.onTick.addEventListener
 
   function onLocationClicked(e) {
     L.DomEvent.disableClickPropagation(e);
   }
 
-  function onLocationOver(e) {
-    console.log(e.target);
-  }
 
 ///////////////////////////////////////////
 
@@ -945,14 +1357,19 @@ console.log("Final: LAT=", updatedPositions[0].latitude*180.0/Math.PI, "LON=", u
 
 
   function clearMap() {
-    mymap.removeEventListener("click", mapAlreadyClicked);
-    markerLayer.getLayers().forEach((m) => {
-      m.remove();
-    });
+    if  (mymap)
+      mymap.removeEventListener("click", mapAlreadyClicked);
+
+    if (markerLayer) {
+      markerLayer.getLayers().forEach((m) => {
+        m.remove();
+      });
+    }
 
     if (moonLine) {
       moonLine.setLatLngs([[0,0],[0,0]]);
     }
+
     myLines = [];
     linesCount = 0;
     tblResults.innerHTML = "";
@@ -965,14 +1382,67 @@ console.log("Final: LAT=", updatedPositions[0].latitude*180.0/Math.PI, "LON=", u
     drawTableHeader("xx/xx/xxxx");
     createDayRow(0,"xx","xx", "xxx", "xxx", "xxx", "xxx", "xxx", "xx", "xx", "xx", "xx");
     dayTable.appendChild(row);
-   tblResults.appendChild(dayTable);
+    tblResults.appendChild(dayTable);
+    spnObserverPopup.innerHTML = "Observer position:<br>"+
+            "Google: lat, lon, 0: xx.xxxx, xx.xxxx, 0<br>"+
+            "Cesium: lon, lat, 0: xx.xxxx, xx.xxxx, 0<br>";
+    spnLinePopup.innerHTML = "Selected:<br>Date: xxxx/xx/xx xx:xx<br>";
   }
 
+///////////////////////////////////////////////
+/////////////// SCRIPT BEGINNING //////////////
+///////////////////////////////////////////////
 
-  LINE_LENGTH_KM = 100;
-  RECT_WIDTH  = 0.002;
-  RECT_HEIGHT = 0.001;
-  STEP_SECONDS = 600;
+
+viewer.camera.changed.addEventListener(() => {
+  rngHeight.value = viewer.camera.positionCartographic.height;
+    observerCamera = viewer.camera;
+    var tempLat = (observerCamera.positionCartographic.latitude*180/Cesium.Math.PI).toFixed(6)*1;
+    var tempLon = (observerCamera.positionCartographic.longitude*180/Cesium.Math.PI).toFixed(6)*1;
+    var tempAlt = (observerCamera.positionCartographic.height).toFixed(0);
+    var tempDate = Cesium.JulianDate.toDate(viewer.clock.currentTime);
+    var moonData = findMoon(tempDate, tempLat, tempLon); // calculate moonAlt and moonAz
+
+    spnMoonAlt.innerHTML = (moonData.altRad*180/3.14).toFixed(1);
+    spnMoonAz.innerHTML = (moonData.azRad*180/3.14).toFixed(1);
+    spnCameraPitchEl.innerHTML = (observerCamera.pitch*180/Cesium.Math.PI).toFixed(1);
+    spnCameraYawHeading.innerHTML = (observerCamera.heading*180/Cesium.Math.PI).toFixed(1);
+    spnCameraFOV.innerHTML = (viewer.camera.frustum.fov*180/Cesium.Math.PI).toFixed(0);
+    spnCameraLoc.innerHTML = "Lat, Lon, Alt (Google): " +  tempLat + ", " + tempLon + ", " + tempAlt + "m<br>" +
+      "Lon, Lat, Alt (Cesium): " +  tempLon + ", " + tempLat + ", " + tempAlt + "m<br>";
+
+    updateLocationLines();
+    updateCameraLine();
+
+})
+
+
+
+  ///// Go to start position /////
+  CesiumCamera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(12.635758, 41.993197, 667),
+      orientation: {
+        //heading: Cesium.Math.toRadians(60.0),
+        pitch: Cesium.Math.toRadians(-90.0),
+        roll: 0.0,
+      },
+  });
+
+
+
+  // By default, the `camera.changed` event will trigger when the camera has changed by 50%
+  // To make it more sensitive, we can bring down this sensitivity
+  viewer.camera.percentageChanged = 0.01;
+
+  changeZoom(); // as per zoom slider
+
+  dayTable = document.createElement("table");
+  dayTable.border = 1;
+  drawTableHeader("xx/xx/xxxx");
+  createDayRow(0,"xx","xx", "xxx", "xxx", "xxx", "xxx", "xxx", "xx", "xx", "xx", "xx");
+  dayTable.appendChild(row);
+  tblResults.appendChild(dayTable);
+
 
   TODAY = new Date();
   document.getElementById("startDate").value = lead0(TODAY.getDate()) + "/" + (lead0(TODAY.getMonth() +1 )) + "/" + TODAY.getFullYear(); // Pre-write date in non-English format, hence DD/MM/YYYY
@@ -984,7 +1454,7 @@ console.log("Final: LAT=", updatedPositions[0].latitude*180.0/Math.PI, "LON=", u
   cameraLineLayer = L.layerGroup().addTo(mymap);
   myLocationsLayer = L.layerGroup().addTo(mymap);
 
-
+  clearMap();
 
 
   crosshairIcon = L.icon({
@@ -1020,13 +1490,18 @@ console.log("Final: LAT=", updatedPositions[0].latitude*180.0/Math.PI, "LON=", u
   myLocationsCount = 0;
   myLocationLine = [];
   myLocations.forEach((location) => {
-    spnLocations.innerHTML += location.name + ": Lat: " + location.lat + ", Lon: " + location.lng + ", Height: " + location.height +"<br>"
+    var locationPos = {lat: location.lat, lng: location.lng, height: location.height};
+    var lcoationDir = getAltAz(mymap.getCenter(), locationPos);
+    var locationAlt = lcoationDir.pitchDeg;
+    var locationAz = lcoationDir.headingDeg;
+    var popupText = location.name + "<br>Alt: " + locationAlt.toFixed(0) + ", Az: " + locationAz.toFixed(0);
+    spnLocations.innerHTML += location.name + '<button onclick="pointedLocation = ' + myLocationsCount + '; lookAt('  + myLocationsCount +  ',1)">Look at</button> <button onclick="lookAt('  + myLocationsCount  + ',2)">Go to</button><br>';
     myLocationLine[myLocationsCount] = L.polyline(
      [[0,0],
      [0,0]],
       {weight : 5, color: '#000000', opacity: 0.4},
     )
-    .bindPopup(location.name)
+    .bindPopup(popupText)
     .bindTooltip(location.name, {sticky : true})
     .addTo(myLocationsLayer)
     .bringToFront();
@@ -1037,8 +1512,6 @@ console.log("Final: LAT=", updatedPositions[0].latitude*180.0/Math.PI, "LON=", u
 
   mymap.on('move', function(e) {
     crosshair.setLatLng(mymap.getCenter());
-
-
     if (bufLineTarget !== null) {
       var mapCenter = mymap.getCenter();
       var moonDest = destination(mymap.getCenter(),bufLineTarget.moonAz, (100000));
@@ -1055,7 +1528,6 @@ console.log("Final: LAT=", updatedPositions[0].latitude*180.0/Math.PI, "LON=", u
   mymap.on('move', onMapDrag);
   var popup = L.popup();
   markerLayer = L.layerGroup().addTo(mymap);
-  //moonLineLayer = L.layerGroup().addTo(mymap);
 
   L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
     maxZoom: 18,
@@ -1067,12 +1539,65 @@ console.log("Final: LAT=", updatedPositions[0].latitude*180.0/Math.PI, "LON=", u
   }).addTo(mymap);
 
 
+  rngHeight.value = viewer.camera.positionCartographic.height;
 
 
-  function onMapDrag(e){
-      var pos =  mymap.getCenter();
-      document.getElementById("status").innerHTML = pos.lat.toFixed(6) + ", " + pos.lng.toFixed(6);
+  function updateLocationLines() {
+      // Update my locations lines:
+      myLocationsCount = 0;
+      myLocations.forEach((location) => {
+          var mapCenter = mymap.getCenter();
+          var myLocationDest = {lat : location.lat, lng: location.lng};
+          var lcoationDir = getAltAz(mapCenter, myLocationDest);
+          var locationAlt = lcoationDir.pitchDeg;
+          var locationAz = lcoationDir.headingDeg;
+          var popupText = location.name + "<br>Alt: " + locationAlt.toFixed(0) + ", Az: " + locationAz.toFixed(0);
+          myLocationLine[myLocationsCount].setLatLngs([[mapCenter.lat,mapCenter.lng],[myLocationDest.lat, myLocationDest.lng]]);
+          myLocationLine[myLocationsCount].bringToFront();
+  //        myLocationLine[myLocationsCount].addEventListener("click", onLocationClicked);
+          myLocationLine[myLocationsCount].getPopup().setContent(popupText)
+          myLocationsCount++;
+      });
+
   }
+
+
+function updateCameraLine() {
+  /////////// Draw line pointing to camera direction /////////
+      var height = Cesium.Cartographic.fromCartesian(viewer.camera.position).height
+      oldHeight = height;
+      var pitchRad = /*Cesium.Math.PI  - */viewer.camera.pitch;
+//console.log("pitchRad=",pitchRad);
+      var lineLength = height / Math.tan(pitchRad);
+      if (lineLength > 100000) {
+        lineLength = 100000
+      }
+      var mapCenter = mymap.getCenter();
+      var cameraHeading = viewer.camera.heading * 180 / 3.14;
+//console.log("cameraHeading1=",cameraHeading);
+      if (viewer.camera.pitch*180/Cesium.Math.PI  < 0) {
+        cameraHeading = cameraHeading - 180;
+      } else {
+        //
+      }
+//console.log("cameraHeading2=",cameraHeading);
+      var cameraDest = destination(mymap.getCenter(),cameraHeading , (lineLength));
+      cameraLine.setLatLngs([[mapCenter.lat,mapCenter.lng],[cameraDest.lat, cameraDest.lng]]);
+  ///////////////
+
+}
+
+
+function updateLookDirection() {
+    if (chkTrack.checked) {
+      lookAt(pointedLocation,1);
+    } // chkTrack
+
+
+    if (chkLockH.checked) {
+
+    } // chkLockH
+}
 
 
 function drawTableHeader(day) {
@@ -1227,7 +1752,7 @@ console.log("mapclick");
     }
 
     startDateEnglish = startDate.substr(3,2) + "/" + startDate.substr(0,2) + "/" + startDate.substr(6,4) + " 12:00:00";
-    startDateJS = new Date(startDateEnglish);
+   startDateJS = new Date(startDateEnglish);
 
     popupObserverText = "<br>Observer position: <br>Google: lat,lon,0 = "+
       e.latlng.lat.toFixed(6) + " , " +
@@ -1383,11 +1908,11 @@ console.log("Custom range");
               .on("click",function(thisLineEvent) {
                 //L.DomEvent.disableClickPropagation(e); // debug
                 bufLineTarget = {
-                    lng : this.options.myDest.lng,
-                    lat : this.options.myDest.lat,
-                    time : this.options.myTime,
-                    moonAlt :  this.options.myAlt,
-                    moonAz :  this.options.myAz
+                    lng : options.myDest.lng,
+                    lat : options.myDest.lat,
+                    time : options.myTime,
+                    moonAlt :  options.myAlt,
+                    moonAz :  options.myAz
                 }  // Store for copying to Cesium if requisted by user.
 
                 var mapCenter = mymap.getCenter();
@@ -1457,11 +1982,11 @@ console.log(thisLineEvent.target.options.lineCount,selectedLine);
               ///// Store data if clicked
               destMarkerClose[linesCount].on("click",function(m) {
                     bufLineTarget = {
-                        lng : this.options.myDest.lng,
-                        lat : this.options.myDest.lat,
-                        time : this.options.myTime,
-                        moonAlt :  this.options.myAlt,
-                        moonAz :  this.options.myAz,
+                        lng : options.myDest.lng,
+                        lat : options.myDest.lat,
+                        time : options.myTime,
+                        moonAlt :  options.myAlt,
+                        moonAz :  options.myAz,
                     }  // Store for copying to Cesium if requisted by user.
                     var mapCenter = mymap.getCenter();
                     var moonDest = destination(mymap.getCenter(),bufLineTarget.moonAz, (100000));
@@ -1594,7 +2119,7 @@ function createDayRow(linesCount, moonDateH, moonDateM, moonPhase, moonAltitude,
 
 
   function destination(latlng, heading, distance) {
-  // Heading in degrees
+  // Returns target coordinates ([lat, lng]) given observer latitude, looking direction (heading) and distance (heading in degrees)
       heading = (heading + 360) % 360;
       var rad = Math.PI / 180,
           radInv = 180 / Math.PI,
@@ -1614,6 +2139,131 @@ function createDayRow(linesCount, moonDateH, moonDateM, moonPhase, moonAltitude,
       lon2 = lon2 > 180 ? lon2 - 360 : lon2 < -180 ? lon2 + 360 : lon2;
       return L.latLng([lat2 * radInv, lon2]);
   }
+
+
+
+  function getAltAz(observer, target) {
+    // Returns heading and elevation for target as seen from observer
+    // observer: {lat: , lng: }
+    // target: {lat: , lng: }
+
+    var pointA = new Cesium.Cartesian3.fromDegrees(observer.lng, observer.lat, observer.height);
+    var pointB = new Cesium.Cartesian3.fromDegrees(target.lng, target.lat, target.height);
+
+    const transform=Cesium.Transforms.eastNorthUpToFixedFrame(pointA);
+    const positionvector=Cesium.Cartesian3.subtract(pointB,pointA,new Cesium.Cartesian3());
+    const vector=Cesium.Matrix4.multiplyByPointAsVector(Cesium.Matrix4.inverse(transform,new Cesium.Matrix4()),positionvector,new Cesium.Cartesian3());
+    const direction=Cesium.Cartesian3.normalize(vector,new Cesium.Cartesian3());
+
+    //heading
+    const headingRadRaw = Math.atan2(direction.y, direction.x) - Cesium.Math.PI_OVER_TWO;
+    const headingRadFixed = Cesium.Math.PI - Cesium.Math.zeroToTwoPi(headingRadRaw);
+    const headingDegFixed = Cesium.Math.toDegrees(Cesium.Math.PI - Cesium.Math.zeroToTwoPi(headingRadFixed));
+
+    //pitch
+    const pitchRad = Cesium.Math.PI_OVER_TWO - Cesium.Math.acosClamped(direction.z);
+    const pitchDeg = Cesium.Math.toDegrees(Cesium.Math.PI_OVER_TWO - Cesium.Math.acosClamped(direction.z));
+
+    if ((headingDegFixed<0)) {
+      headingDegFixed2 = - headingDegFixed;
+    } else {
+      headingDegFixed2 = 360 - headingDegFixed;
+    }
+
+    return (
+      {
+        headingDeg : headingDegFixed2,
+        pitchRad      : pitchRad,
+        pitchDeg      : pitchDeg,
+        originCartesian : pointA,
+        destinationCartesian : pointB
+      }
+    );
+}
+
+
+function getHeight(lat, lng) {
+  var cartographic = Cesium.Cartographic.fromDegrees(  lng, lat, 5000, new Cesium.Cartographic());
+  var positions = [ cartographic ];
+  var promise = Cesium.sampleTerrain(viewer.terrainProvider, 11, positions);
+  Cesium.when(promise, function( updatedPositions ) {
+    height = updatedPositions[0].height;
+  });
+}
+
+
+
+function cameraUpDirection(amount) {
+  // Returns "up" Cartesian3 vector to move camera up w.r.t. terrain, not w.r.t. camera viewing direction
+  cameraCartesian = viewer.camera.position;
+  cameraCartographic = Cesium.Cartographic.fromCartesian(cameraCartesian);
+  cameraCartographic.height += amount;
+  raisedCamera =  Cesium.Cartographic.toCartesian(cameraCartographic);
+  return (
+    {
+      upDir : Cesium.Cartesian3.subtract(raisedCamera, cameraCartesian, new Cesium.Cartesian3()),
+      upPos : raisedCamera
+    }
+  );
+}
+
+function drawProfile(lng1, lat1, h1, lng2, lat2, h2) {
+
+  startPointCartesian = Cesium.Cartesian3.fromDegrees(lng1, lat1, h1);
+  endPointCartesian = Cesium.Cartesian3.fromDegrees(lng2, lat2, h2);
+
+  const count = 30;
+  cartesians = new Array(count);
+  for (let i = 0; i < count; ++i) {
+    const offset = i / (count - 1);
+    cartesians[i] = Cesium.Cartesian3.lerp(
+      startPointCartesian,
+      endPointCartesian,
+      offset,
+      new Cesium.Cartesian3()
+    );
+
+    //var carto = Cesium.Cartographic.fromCartesian(cartesians[i]);
+    //console.log(carto.height);
+  }
+
+console.log(cartesians);
+
+scene
+    .clampToHeightMostDetailed(cartesians)
+    .then(function (clampedCartesians) {
+      for (let i = 0; i < count; ++i) {
+        viewer.entities.add({
+          position: clampedCartesians[i],
+          ellipsoid: {
+            radii: new Cesium.Cartesian3(0.2, 0.2, 0.2),
+            material: Cesium.Color.RED,
+          },
+        });
+      }
+
+      viewer.entities.add({
+        polyline: {
+          positions: clampedCartesians,
+          arcType: Cesium.ArcType.NONE,
+          width: 12,
+          /*
+          material: new Cesium.PolylineOutlineMaterialProperty({
+            color: Cesium.Color.YELLOW,
+          }),
+          depthFailMaterial: new Cesium.PolylineOutlineMaterialProperty(
+            {
+              color: Cesium.Color.YELLOW,
+            }
+          ),*/
+        },
+      });
+
+    });
+
+
+}
+
 
 </script>
 
