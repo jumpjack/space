@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -8,6 +7,14 @@
 
 <!--
 Astrophotography ephemeris calculator bu Luca Cassioli
+
+V.0.6.0m
+- removed markers: lines are enough
+- fixed bug of line not permanently highlighted upon clicking
+- removed buttons from popup
+- working on 3d moon/sun pointer
+- locations lines made thinner; todo: add labels/tooltips for each line on map border, remove tooltip and clickability
+- added permanent tooltips to location lines, both when visible and not
 
 V. 0.5.0m
 - Added pitch/heading information for myLocations
@@ -96,8 +103,10 @@ V.0.0.1: First working version. To do:
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
   <!--<script src="https://unpkg.com/leaflet-center-cross@0.0.8/dist/leaflet.CenterCross.js"></script>-->
   <script src="leaflet.circle-sector.js"></script>
-  <script src="https://cesium.com/downloads/cesiumjs/releases/1.75/Build/Cesium/Cesium.js"></script>
-  <link href="https://cesium.com/downloads/cesiumjs/releases/1.75/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+<script src="https://cesium.com/downloads/cesiumjs/releases/1.80/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.80/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+
+
 
   <script src="mylocations.js"></script>
 
@@ -105,7 +114,7 @@ V.0.0.1: First working version. To do:
 
 <body>
 <center>Moon ephemeris calculator for photographers<br>
-v.0.5.0m - 17/feb/2023<br>
+v.0.6.0m - 23/feb/2023<br>
 </center>
 <table border=1>
 <tr>
@@ -131,9 +140,9 @@ v.0.5.0m - 17/feb/2023<br>
           </td>
           <td style="vertical-align: top;">
             <span id="spnObserverPopup" name = "spnObserverPopup" style="vertical-align: top;">
-            -
-            </span>
+            </span><br>
             <!-- popup holder -->
+            Map center:<br> <span id="spnMapCenter" name="spnMapCenter">xx.xxxx, xx.xxxx</span>
           </td>
           <td  style="vertical-align: top;">
             <span id="spnLinePopup" name = "spnLinePopup"  style="vertical-align: top;">
@@ -311,7 +320,9 @@ v.0.5.0m - 17/feb/2023<br>
         <tr>
           <td>
             <div id="cesiumContainer" style="width: 640px; height: 400px;"></div>
-          </td>
+<div id="toolbar">
+</div>
+         </td>
           <td>
             <table border =0>
               <tr>
@@ -372,7 +383,7 @@ v.0.5.0m - 17/feb/2023<br>
           </td>
           <td>
             <button onclick="northUp()">N</button>
-          </td>
+         </td>
           <td>
             <button onclick="lookAtMoon()">Moon</button>
           </td>
@@ -421,6 +432,7 @@ Observing location:<br>
 Tune parameters, then click on map to see moon visibility directions.<br>
 <br>
 Use <a href="http://xjubier.free.fr/en/site_pages/astronomy/MoonExposureCalculator.html">this site</a> to calculate best exposure data to take photos of the moon.<br>
+
 
   <script src="utilsLC.js"></script> <!-- Basic drawing functions -->
   <script src="basicLC.js"></script> <!-- Cesium viewer setup - to be placed AFTER body, else it will not find Cesium DIV container-->
@@ -481,6 +493,7 @@ targetAvailable = false;
 cameraAvailable = false;
 var startMousePosition;
 var mousePosition;
+compassCtx = null;
 
 var flags = {
   looking: false,
@@ -493,17 +506,49 @@ var flags = {
 };
 
 
+setupCesiumCompass();
 
-/// Add cross at center of Cesium view ////////
-var rect = document.createElement("div");
-cesiumContainer.appendChild(rect);
-rect.style.position = 'relative';
-rect.style.width = '0px';
-rect.style.height = '0px';
-rect.style.backgroundColor = 'blue';
-rect.style.top = '-200px';
-rect.style.left = '320px';
-rect.innerHTML = "X";
+function setupCesiumCompass() {
+  canvas2d = document.createElement("canvas");
+  canvas2d.style.position = 'relative';
+
+  cesiumContainer.appendChild(canvas2d);
+  cesiumCanvasCenterX = viewer.canvas.width/2;
+  cesiumCanvasCenterY = viewer.canvas.height/2;
+  compassCtx = canvas2d.getContext("2d");
+
+    canvas2d.width = 100; // Compass image dimensions
+    canvas2d.height = 100;
+    canvas2d.style.top = -viewer.canvas.height + "px";
+    canvas2d.style.left = 0;
+
+
+  compassImage = new Image();
+  compassImage.onload = function () {
+    compassImage.width = compassImage.width/2;
+    compassImage.height = compassImage.height/2;
+    canvas2d.width = compassImage.width; // Compass image dimensions
+    canvas2d.height = compassImage.height;
+    canvas2d.style = "position:relative;top:-250px;left:270px;"
+  };
+  compassImage.src = 'compass.png';
+}
+
+
+
+
+
+function setCompassRotation(ang) {
+    compassCtx.save()
+    compassCtx.clearRect(0, 0, compassCtx.canvas.width, compassCtx.canvas.height); //clear the canvas
+    var pos = {x: compassCtx.canvas.width/2, y: compassCtx.canvas.height/2}
+    compassCtx.translate(pos.x ,pos.y)
+    compassCtx.rotate(Math.PI / 180 * ang)
+    compassCtx.drawImage(compassImage, -compassImage.width / 2, -compassImage.height / 2, compassImage.width, compassImage.height)
+    compassCtx.restore()
+}
+
+
 /////
 
 
@@ -533,7 +578,7 @@ function  posFromObserver() {
       height = updatedPositions[0].height;
       flyLocGoogle.value = inputLat.toFixed(6) + "," + inputLon.toFixed(6) + "," + (height+100).toFixed(0);
     });
-  } else {
+ } else {
     alert("Please select an observer position on 2d map");
   }
 }
@@ -554,11 +599,62 @@ function destFromLine() {
 
 function onMapDrag(e){
     var pos =  mymap.getCenter();
-    document.getElementById("status").innerHTML = pos.lat.toFixed(6) + ", " + pos.lng.toFixed(6);
     updateLocationLines();
     updateCameraLine();
     if (chkSync2D.checked) {
       syncCesium();
+    }
+
+    var edges = getMapEdges(mymap,false);
+    CORRECTX = (mymap.getBounds().getEast() - mymap.getBounds().getWest())/50;
+    CORRECTY = (mymap.getBounds().getNorth() - mymap.getBounds().getSouth())/50;
+    if (typeof (myLocationLine) !== "undefined") {
+      for (var locnum = 0; locnum < myLocationLine.length; locnum++) {
+        var inters1 = intersect(edges.top,    myLocationLine[locnum], false, mymap, myLocations[locnum].name + "N"); inters1.lat -=  CORRECTY;
+        var inters2 = intersect(edges.right,  myLocationLine[locnum], false, mymap, myLocations[locnum].name + "E"); inters2.lng -=  CORRECTX;
+        var inters3 = intersect(edges.bottom, myLocationLine[locnum], false, mymap, myLocations[locnum].name + "S"); inters3.lat +=  CORRECTY;
+        var inters4 = intersect(edges.left,   myLocationLine[locnum], false, mymap, myLocations[locnum].name + "W"); inters4.lng +=  CORRECTX
+
+        if (inters1.inters)  {
+          myLocationEdgeTooltips[locnum*4].setLatLng(inters1);
+          mymap.openTooltip(myLocationEdgeTooltips[locnum*4]);
+          myLocationEdgeTooltips[locnum*4+0.0].setOpacity(0.5);
+        } else {
+          mymap.closeTooltip(myLocationEdgeTooltips[locnum*4]);
+        }
+
+        if (inters2.inters)  {
+          myLocationEdgeTooltips[locnum*4+1.0].setLatLng(inters2);
+          mymap.openTooltip(myLocationEdgeTooltips[locnum*4+1.0]);
+          myLocationEdgeTooltips[locnum*4+1.0].setOpacity(0.5);
+        } else {
+          mymap.closeTooltip(myLocationEdgeTooltips[locnum*4+1.0]);
+        }
+
+        if (inters3.inters)  {
+          myLocationEdgeTooltips[locnum*4+2.0].setLatLng(inters3);
+          mymap.openTooltip(myLocationEdgeTooltips[locnum*4+2.0]);
+          myLocationEdgeTooltips[locnum*4+2.0].setOpacity(0.5);
+        } else {
+          mymap.closeTooltip(myLocationEdgeTooltips[locnum*4+2.0]);
+        }
+
+        if (inters4.inters)  {
+          myLocationEdgeTooltips[locnum*4+3.0].setLatLng(inters4);
+          mymap.openTooltip(myLocationEdgeTooltips[locnum*4+3.0]);
+          myLocationEdgeTooltips[locnum*4+3.0].setOpacity(0.5);
+        } else {
+          mymap.closeTooltip(myLocationEdgeTooltips[locnum*4+3.0]);
+        }
+
+        // If no intersection exists between line and edges, then location is visible: turn on only one tooltip, without NEWS indication (all the others are already closed):
+        if ((!inters1.inters) && (!inters2.inters) && (!inters3.inters) && (!inters4.inters)) {
+          myLocationEdgeTooltips[locnum*4].setLatLng({lng: myLocations[locnum].lng , lat: myLocations[locnum].lat});
+          myLocationEdgeTooltips[locnum*4].setContent(myLocations[locnum].name);
+          myLocationEdgeTooltips[locnum*4].setOpacity(1);
+          mymap.openTooltip(myLocationEdgeTooltips[locnum*4]);
+        }
+      }
     }
 }
 
@@ -765,17 +861,14 @@ function SunCalc_getMoonPosition(date, lat, lng) {
 };
 
 
-    function lookAtMoonCesium(camera, date, lat, lng) {
+    function lookAtMoonCesium(camera, dateJS, lat, lng) {
       const icrfToFixed = new Cesium.Matrix3();
-      if (!(Cesium.Transforms.computeIcrfToFixedMatrix(date, icrfToFixed))) {
-        Cesium.Transforms.computeTemeToPseudoFixedMatrix(date, icrfToFixed);
+      var dateCesium = Cesium.JulianDate.fromDate(dateJS);
+      if (!(Cesium.Transforms.computeIcrfToFixedMatrix(dateCesium, icrfToFixed))) {
+        Cesium.Transforms.computeTemeToPseudoFixedMatrix(dateCesium, icrfToFixed);
       }
-
-      moonPosition = Cesium.Simon1994PlanetaryPositions.computeMoonPositionInEarthInertialFrame(
-        date
-      );
+      moonPosition = getCesiumMoonCartesian3(dateJS);
       Cesium.Matrix3.multiplyByVector(icrfToFixed, moonPosition, moonPosition);
-
       myObserver = new Cesium.Cartesian3.fromDegrees(lng, lat,  0);
       myPositionvector=Cesium.Cartesian3.subtract(myObserver, moonPosition, new Cesium.Cartesian3());
       viewer.camera.flyTo({
@@ -787,6 +880,17 @@ function SunCalc_getMoonPosition(date, lat, lng) {
       );*/
     }
 
+
+
+    function getCesiumMoonCartesian3(dateJS) {
+      var dateCesium = Cesium.JulianDate.fromDate(dateJS);
+      const icrfToFixed = new Cesium.Matrix3();
+      if (!(Cesium.Transforms.computeIcrfToFixedMatrix(dateCesium, icrfToFixed))) {
+        Cesium.Transforms.computeTemeToPseudoFixedMatrix(dateCesium, icrfToFixed);
+      }
+      moonPosition = Cesium.Simon1994PlanetaryPositions.computeMoonPositionInEarthInertialFrame(dateCesium);
+      return moonPosition;
+    }
 
 /////////
 
@@ -815,11 +919,11 @@ function lookAtMoon() {
 function lookAt(locnum, type) { // type = 1 LOOK, =2 GOTO
 var cartographic;
 var positions;
-
   if (locnum < 0) {
     // track moon or sun (debug: to do)
     return;
   }
+console.log("locnum=",locnum, myLocations[locnum]);
 
   if (chkLockH.checked) {  // observer height locked: use it, then check if location height is needed
     observerHeight = lockedHeight.value * 1.0;
@@ -1164,8 +1268,8 @@ handler.setInputAction(function (position) {
 
   viewer.clock.onTick.addEventListener(function (clock) {
 
-
-
+    updateCameraData();
+    
     // Change movement speed based on the distance of the camera to the surface of the ellipsoid.
     var cameraHeight = ellipsoid.cartesianToCartographic(viewer.camera.position).height;
     moveRate = cameraHeight / 100.0;
@@ -1176,6 +1280,7 @@ handler.setInputAction(function (position) {
     if (flags.moveBackward) {  // S
       viewer.camera.moveBackward(moveRate);
     }
+
     if (flags.moveUp) {        // Q
       viewer.camera.moveUp(moveRate);
     }
@@ -1393,26 +1498,15 @@ console.log("Final: LAT=", updatedPositions[0].latitude*180.0/Math.PI, "LON=", u
 /////////////// SCRIPT BEGINNING //////////////
 ///////////////////////////////////////////////
 
+  //setupCesiumCompass();
 
 viewer.camera.changed.addEventListener(() => {
   rngHeight.value = viewer.camera.positionCartographic.height;
-    observerCamera = viewer.camera;
-    var tempLat = (observerCamera.positionCartographic.latitude*180/Cesium.Math.PI).toFixed(6)*1;
-    var tempLon = (observerCamera.positionCartographic.longitude*180/Cesium.Math.PI).toFixed(6)*1;
-    var tempAlt = (observerCamera.positionCartographic.height).toFixed(0);
-    var tempDate = Cesium.JulianDate.toDate(viewer.clock.currentTime);
-    var moonData = findMoon(tempDate, tempLat, tempLon); // calculate moonAlt and moonAz
-
-    spnMoonAlt.innerHTML = (moonData.altRad*180/3.14).toFixed(1);
-    spnMoonAz.innerHTML = (moonData.azRad*180/3.14).toFixed(1);
-    spnCameraPitchEl.innerHTML = (observerCamera.pitch*180/Cesium.Math.PI).toFixed(1);
-    spnCameraYawHeading.innerHTML = (observerCamera.heading*180/Cesium.Math.PI).toFixed(1);
-    spnCameraFOV.innerHTML = (viewer.camera.frustum.fov*180/Cesium.Math.PI).toFixed(0);
-    spnCameraLoc.innerHTML = "Lat, Lon, Alt (Google): " +  tempLat + ", " + tempLon + ", " + tempAlt + "m<br>" +
-      "Lon, Lat, Alt (Cesium): " +  tempLon + ", " + tempLat + ", " + tempAlt + "m<br>";
-
+setMoonSun3dLines(mymap.getCenter().lat,mymap.getCenter().lng)
+    updateCameraData();
     updateLocationLines();
     updateCameraLine();
+    setCompassRotation(-viewer.camera.heading * 180 / 3.14);
 
 })
 
@@ -1477,7 +1571,7 @@ viewer.camera.changed.addEventListener(() => {
   moonLine = L.polyline(
    [[0,0],
    [0,0]],
-    {weight : 5},
+    {weight : 3},
   ).addTo(moonLineLayer);
 
   cameraLine = L.polyline(
@@ -1487,25 +1581,55 @@ viewer.camera.changed.addEventListener(() => {
   ).addTo(cameraLineLayer);
 
 
+  moonLine3d = null;
+  sunLine3d = null;
+  createMoonSun3dLines();
+
+
+// debug per tooltip ////////////////
+/*myLocations = [
+{ lat : 41.902139, lng : 12.453384, height: 213, name : "Cupola San Pietro"},
+]*/
+/////////////////////////////
+
+
   myLocationsCount = 0;
   myLocationLine = [];
+  myLocationEdgeTooltips = [];
+  var tooltipsCount = 0;
   myLocations.forEach((location) => {
-    var locationPos = {lat: location.lat, lng: location.lng, height: location.height};
-    var lcoationDir = getAltAz(mymap.getCenter(), locationPos);
-    var locationAlt = lcoationDir.pitchDeg;
-    var locationAz = lcoationDir.headingDeg;
-    var popupText = location.name + "<br>Alt: " + locationAlt.toFixed(0) + ", Az: " + locationAz.toFixed(0);
-    spnLocations.innerHTML += location.name + '<button onclick="pointedLocation = ' + myLocationsCount + '; lookAt('  + myLocationsCount +  ',1)">Look at</button> <button onclick="lookAt('  + myLocationsCount  + ',2)">Go to</button><br>';
-    myLocationLine[myLocationsCount] = L.polyline(
-     [[0,0],
-     [0,0]],
-      {weight : 5, color: '#000000', opacity: 0.4},
-    )
-    .bindPopup(popupText)
-    .bindTooltip(location.name, {sticky : true})
-    .addTo(myLocationsLayer)
-    .bringToFront();
-    myLocationLine[myLocationsCount].getTooltip().options.interactive = true;
+//    if (!location.observer) {
+      var locationPos = {lat: location.lat, lng: location.lng, height: location.height};
+      var lcoationDir = getAltAz(mymap.getCenter(), locationPos);
+      var locationAlt = lcoationDir.pitchDeg;
+      var locationAz = lcoationDir.headingDeg;
+      var popupText = location.name + "<br>Alt: " + locationAlt.toFixed(0) + ", Az: " + locationAz.toFixed(0);
+      spnLocations.innerHTML += location.name + '<button onclick="pointedLocation = ' + myLocationsCount + '; lookAt('  + myLocationsCount +  ',1)">Look at</button> <button onclick="lookAt('  + myLocationsCount  + ',2)">Go to</button><br>';
+      myLocationLine[myLocationsCount] = L.polyline(
+       [[0,0],
+       [0,0]],
+        {weight : 2, color: '#000000', opacity: 0.4},
+      )
+      .bindPopup(popupText)
+      .bindTooltip(location.name, {sticky : true})
+      .addTo(myLocationsLayer)
+      .bringToFront();
+      myLocationLine[myLocationsCount].getTooltip().options.interactive = true;
+
+      // Create 4 popups for each location line, to be updated in realtime to map edges intersections
+
+      var NESW = ["N","E","S","W"];
+      for (var tt=0; tt<4; tt++) {
+        myLocationEdgeTooltips[tooltipsCount + tt] = L.tooltip();
+        myLocationEdgeTooltips[tooltipsCount + tt].setLatLng(mymap.getCenter());
+        myLocationEdgeTooltips[tooltipsCount + tt].setContent(location.name +  NESW[tt]);
+        myLocationEdgeTooltips[tooltipsCount + tt].addTo(mymap);
+        myLocationEdgeTooltips[tooltipsCount + tt].closePopup(myLocationEdgeTooltips[tooltipsCount + tt]); // debug: needed?
+      }
+        tooltipsCount += 4;
+//    } else {
+//     spnLocations.innerHTML += "(" + location.name + '<button onclick="pointedLocation = ' + myLocationsCount + '; lookAt('  + myLocationsCount +  ',1)">Look at</button> <button onclick="lookAt('  + myLocationsCount  + ',2)">Go to</button>)<br>';
+//    }
     myLocationsCount++;
   });
 
@@ -1517,9 +1641,11 @@ viewer.camera.changed.addEventListener(() => {
       var moonDest = destination(mymap.getCenter(),bufLineTarget.moonAz, (100000));
       moonLine.setLatLngs([[mapCenter.lat,mapCenter.lng],[moonDest.lat, moonDest.lng]])
       moonLine.bringToFront();
+    } else {
     }
 
   });
+
 
 
 
@@ -1543,9 +1669,10 @@ viewer.camera.changed.addEventListener(() => {
 
 
   function updateLocationLines() {
-      // Update my locations lines:
-      myLocationsCount = 0;
-      myLocations.forEach((location) => {
+    ////// Update my locations lines:
+    myLocationsCount = 0;
+    myLocations.forEach((location) => {
+//        if (!location.observer) {
           var mapCenter = mymap.getCenter();
           var myLocationDest = {lat : location.lat, lng: location.lng};
           var lcoationDir = getAltAz(mapCenter, myLocationDest);
@@ -1554,13 +1681,33 @@ viewer.camera.changed.addEventListener(() => {
           var popupText = location.name + "<br>Alt: " + locationAlt.toFixed(0) + ", Az: " + locationAz.toFixed(0);
           myLocationLine[myLocationsCount].setLatLngs([[mapCenter.lat,mapCenter.lng],[myLocationDest.lat, myLocationDest.lng]]);
           myLocationLine[myLocationsCount].bringToFront();
-  //        myLocationLine[myLocationsCount].addEventListener("click", onLocationClicked);
           myLocationLine[myLocationsCount].getPopup().setContent(popupText)
-          myLocationsCount++;
-      });
-
+//        }
+        myLocationsCount++;
+    });
+    spnMapCenter.innerHTML = mymap.getCenter().lat.toFixed(6) + ", " + mymap.getCenter().lng.toFixed(6) + "<br>" +
+      mymap.getBounds().getNorth().toFixed(6) + ",<br>" +
+      mymap.getBounds().getWest().toFixed(6) + " - " +
+     mymap.getBounds().getEast().toFixed(6) + ",<br>" +
+      mymap.getBounds().getSouth().toFixed(6) + ",<br>";
   }
 
+
+function updateCameraData() {
+    observerCamera = viewer.camera;
+    var tempLat = (observerCamera.positionCartographic.latitude*180/Cesium.Math.PI).toFixed(6)*1;
+    var tempLon = (observerCamera.positionCartographic.longitude*180/Cesium.Math.PI).toFixed(6)*1;
+    var tempAlt = (observerCamera.positionCartographic.height).toFixed(0);
+    var tempDate = Cesium.JulianDate.toDate(viewer.clock.currentTime);
+    var moonData = findMoon(tempDate, tempLat, tempLon); // calculate moonAlt and moonAz
+    spnMoonAlt.innerHTML = (moonData.altRad*180/3.14).toFixed(1);
+    spnMoonAz.innerHTML = (moonData.azRad*180/3.14).toFixed(1);
+    spnCameraPitchEl.innerHTML = (observerCamera.pitch*180/Cesium.Math.PI).toFixed(1);
+    spnCameraYawHeading.innerHTML = (observerCamera.heading*180/Cesium.Math.PI).toFixed(1);
+    spnCameraFOV.innerHTML = (viewer.camera.frustum.fov*180/Cesium.Math.PI).toFixed(0);
+    spnCameraLoc.innerHTML = "Lat, Lon, Alt (Google): " +  tempLat + ", " + tempLon + ", " + tempAlt + "m<br>" +
+      "Lon, Lat, Alt (Cesium): " +  tempLon + ", " + tempLat + ", " + tempAlt + "m<br>";
+}
 
 function updateCameraLine() {
   /////////// Draw line pointing to camera direction /////////
@@ -1687,15 +1834,15 @@ function drawTableHeader(day) {
   function highlightLinePermanently(lineNum) {
 console.log("Permanent:",lineNum,selectedLine);
     myLines.forEach( (oldline) => {
-      if (oldline.options.lineCount !== selectedLine) {
+      if (oldline.options.lineCount !== selectedLine) { // Remove highlighting from all lines but selected ones
         oldline.setStyle({color : DEFAULT_LINE_COLOR, weight : 5})
         document.getElementById("result_" + oldline.options.lineCount).setAttribute("style","background-color:#FFFFFF");
       } else {
         if (myLines[lineNum]) {
-          myLines[lineNum].setStyle({color : "#5555AA", weight : 5})
+          myLines[lineNum].setStyle({color : "#5555AA", weight : 5}) // Highlight line
         }
         if (document.getElementById("result_" + lineNum)) {
-          document.getElementById("result_" + lineNum).setAttribute("style","background-color:#5555AA");
+          document.getElementById("result_" + lineNum).setAttribute("style","background-color:#5555AA"); // Highlight table row
         }
       }
     });
@@ -1752,7 +1899,7 @@ console.log("mapclick");
     }
 
     startDateEnglish = startDate.substr(3,2) + "/" + startDate.substr(0,2) + "/" + startDate.substr(6,4) + " 12:00:00";
-   startDateJS = new Date(startDateEnglish);
+    startDateJS = new Date(startDateEnglish);
 
     popupObserverText = "<br>Observer position: <br>Google: lat,lon,0 = "+
       e.latlng.lat.toFixed(6) + " , " +
@@ -1895,18 +2042,22 @@ console.log("Custom range");
                 "&nbsp;&nbsp;Phase: " +   moonPhase +  "%<br>" +
                 "Sun:<br>"+
                 "&nbsp;&nbsp;Az: " +  sunAz +  "&deg;<br>"+
-                "&nbsp;&nbsp;Alt: " + sunAlt +  "&deg;<br>" +
-                "<button onclick='destFromLine()'>Copy</button><button onclick='posFromObserver();destFromLine();gotoLocation()'>Fly</button>"
+                "&nbsp;&nbsp;Alt: " + sunAlt +  "&deg;<br>";
+
+              markerButtons =  "<button onclick='destFromLine()'>Copy</button><button onclick='posFromObserver();destFromLine();gotoLocation()'>Fly</button>";
 
 
              ///// Add line for this result:
               myLines[linesCount] = L.polyline([
-                [e.latlng.lat, e.latlng.lng],
+               [e.latlng.lat, e.latlng.lng],
                 [destFar.lat, destFar.lng]],
                 {...myOptions, popupText :   markerPopupText, lineCount: linesCount },
               )
               .on("click",function(thisLineEvent) {
+console.log("Line clicked, drawing moon ",thisLineEvent);
                 //L.DomEvent.disableClickPropagation(e); // debug
+                options = thisLineEvent.target.options;
+
                 bufLineTarget = {
                     lng : options.myDest.lng,
                     lat : options.myDest.lat,
@@ -1915,15 +2066,14 @@ console.log("Custom range");
                     moonAz :  options.myAz
                 }  // Store for copying to Cesium if requisted by user.
 
-                var mapCenter = mymap.getCenter();
+               var mapCenter = mymap.getCenter();
                 var moonDest = destination(mymap.getCenter(),bufLineTarget.moonAz, (100000));
                 moonLine.setLatLngs([[mapCenter.lat,mapCenter.lng],[moonDest.lat, moonDest.lng]]);
                 moonLine.setStyle({color : MOON_LINE_COLOR})
-                spnLinePopup.innerHTML = "SELECTED:<br>" + thisLineEvent.target.options.popupText;
-                //highlightLine(thisLineEvent.target);
+                spnLinePopup.innerHTML = "SELECTED:<br>" + thisLineEvent.target.options.popupText + markerButtons;
                 selectedLine = thisLineEvent.target.options.lineCount;
-console.log(thisLineEvent.target.options.lineCount,selectedLine);
                 highlightLinePermanently(thisLineEvent.target.options.lineCount);
+
               }) // onclick function for the line
 
               .on("mouseover", function (thisLineEvent) {
@@ -1970,7 +2120,7 @@ console.log(thisLineEvent.target.options.lineCount,selectedLine);
               ///////////////////////////////////////////////////////////////////////
 */
 
-
+/*
 
              ////// Add marker for this result:
               destMarkerClose[linesCount] = L.marker(
@@ -2001,6 +2151,8 @@ console.log(thisLineEvent.target.options.lineCount,selectedLine);
               console.log(e);
               }
             );
+
+*/
             ///////////////////
 
 
@@ -2260,10 +2412,177 @@ scene
       });
 
     });
+}
+
+function createMoonSun3dLines() {
+  tempDate = new Cesium.JulianDate();
+  finalDate = new Cesium.JulianDate.addHours(viewer.clock.currentTime,-1,tempDate)
+  moonLine3d = viewer.entities.add({
+    polyline: {
+      positions: [
+          viewer.camera.position,
+          new Cesium.Simon1994PlanetaryPositions.computeMoonPositionInEarthInertialFrame(finalDate),
+      ],
+      width: 5,
+      arcType: Cesium.ArcType.NONE,
+      mat: new Cesium.PolylineArrowMaterialProperty(Cesium.Color.WHITE),
+    },
+  });
+
+  sunLine3d = viewer.entities.add({
+    polyline: {
+      positions: [
+          viewer.camera.position,
+          new Cesium.Simon1994PlanetaryPositions.computeSunPositionInEarthInertialFrame(finalDate),
+      ],
+      width: 5,
+      arcType: Cesium.ArcType.NONE,
+      mat: new Cesium.PolylineArrowMaterialProperty(Cesium.Color.YELLOW),
+    },
+  });
+}
+
+function setMoonSun3dLines(lat, lon) {
+  tempDate = new Cesium.JulianDate();
+  finalDate = new Cesium.JulianDate.addHours(viewer.clock.currentTime,0,tempDate)
+
+  if ((lat == null) && (lon == null)) {
+    basePos = viewer.camera.position;
+//console.log("Repositioning from camera...");
+  } else {
+    basePos = Cesium.Cartesian3.fromDegrees(lon, lat, 100);
+//console.log("Repositioning for date ", Cesium.JulianDate.toDate(viewer.clock.currentTime));
+  }
+  result = new Cesium.Cartesian3();
+  Cesium.Simon1994PlanetaryPositions.computeMoonPositionInEarthInertialFrame(finalDate, result);
+  moonLine3d.polyline.positions = [basePos,result];
+
+  result2 = new Cesium.Cartesian3();
+  Cesium.Simon1994PlanetaryPositions.computeSunPositionInEarthInertialFrame(finalDate, result2);
+  sunLine3d.polyline.positions = [basePos,result2];
+
+
+    var tempLat = (viewer.camera.positionCartographic.latitude*180/Cesium.Math.PI).toFixed(6)*1;
+    var tempLon = (viewer.camera.positionCartographic.longitude*180/Cesium.Math.PI).toFixed(6)*1;
+    var tempAlt = (viewer.camera.positionCartographic.height).toFixed(0);
+    var tempDate = Cesium.JulianDate.toDate(viewer.clock.currentTime);
+    var moonData = findMoon(tempDate, tempLat, tempLon); // calculate moonAlt and moonAz
+
+arrowFromTo(mymap.getCenter().lat, mymap.getCenter().lng,200,moonData.altRad*180/3.14,moonData.azRad*180/3.14,400000000,1,Cesium.Color.WHITE,true, false)
 
 
 }
 
+
+
+
+function CalcPosFromAltAzDist(startPoint, vectorPointing) {
+
+  var ellipsoid = Cesium.Ellipsoid.WGS84;
+  var ENU = new Cesium.Matrix4();
+  Cesium.Transforms.eastNorthUpToFixedFrame(startPoint,ellipsoid,ENU);
+  var myX = vectorPointing.dist * Math.cos(vectorPointing.alt * Math.PI / 180)* Math.sin(vectorPointing.az * Math.PI / 180);
+  var myY = vectorPointing.dist * Math.cos(vectorPointing.alt * Math.PI / 180)* Math.cos(vectorPointing.az * Math.PI / 180);
+  var myZ = vectorPointing.dist * Math.sin(vectorPointing.alt * Math.PI / 180);
+  var offset = new Cesium.Cartesian3(myX,myY,myZ);
+  var finalPoint = Cesium.Matrix4.multiplyByPoint(ENU, offset, new Cesium.Cartesian3());
+  return finalPoint;
+
+}
+
+function getMapEdges(map, debugDraw) {
+  var B = map.getBounds();
+  var NW = B.getNorthWest();
+  var NE = B.getNorthEast();
+  var SE = B.getSouthEast();
+  var SW = B.getSouthWest();
+  if (debugDraw) {
+    var tempTop =  L.polyline(
+    [NW, NE],
+    {weight : 3},
+    ).addTo(map);
+
+    var tempRight =  L.polyline(
+     [NE, SE],
+    {weight : 3},
+    ).addTo(map);
+
+    var tempBottom =  L.polyline(
+    [SW, SE],
+    {weight : 3},
+    ).addTo(map);
+
+    var tempLeft =  L.polyline(
+    [NW, SW],
+    {weight : 3},
+    ).addTo(map);
+  }
+return {
+    top:      [NW, NE],
+    right :   [NE, SE],
+    bottom :  [SW, SE],
+    left :    [NW, SW]
+  }
+}
+
+
+function intersect(edgePoints, line, drawDebug, map, tooltipName) {
+
+  var x1 = edgePoints[0].lng
+  var y1 = edgePoints[0].lat
+  var x2 = edgePoints[1].lng
+  var y2 = edgePoints[1].lat
+
+  var x3 = line.getLatLngs()[0].lng
+  var y3 = line.getLatLngs()[0].lat
+  var x4 = line.getLatLngs()[1].lng
+  var y4 = line.getLatLngs()[1].lat
+
+    // Check if none of the lines are of length 0
+    if ((x1 === x2 && y1 === y2) || (x3 === x4 && y3 === y4)) {
+        return { err : "zero line"}
+    }
+
+    const denominator = ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1))
+
+    // Lines are parallel
+    if (denominator === 0) {
+        return {err: "parallel"}
+    }
+
+    let ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator
+    let ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denominator
+
+    // Return a object with the x and y coordinates of the intersection
+    let x = x1 + ua * (x2 - x1)
+    let y = y1 + ua * (y2 - y1)
+
+    if (drawDebug) {
+      map.openTooltip(tooltipName, { lng: x, lat: y });
+      var tempLine = L.polyline(
+       [[x3,y3],
+       [x4,y4]],
+       {weight : 15},
+      ).addTo(moonLineLayer);
+    }
+
+   if ((ua >= 0 && ua <= 1) && (ub >= 0 && ub <= 1))  {
+       Intersez2Segm = true
+   } else {
+       Intersez2Segm = false
+   }
+
+/*console.log(tooltipName);
+console.log(x1,x,x2, "---", x3,x,x4 );
+console.log(y1,y,y2, "---", y3,y,y4);
+console.log("^^^^^^^^^");
+*/
+    return {
+      lng: x,
+      lat: y,
+      inters:  Intersez2Segm
+    }
+}
 
 </script>
 
