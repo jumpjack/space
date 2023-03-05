@@ -28,7 +28,7 @@ function addPoint(x,y,z, name, alt) {
 
 function arrowFromTo(latitude, longitude, height, elev, azimut, length, width, color, drawOrNot, targetName){
 	if ((targetName == null)  || (targetName.length == 0 )) {
-		console.log("WARNING: target has no name, dist= " , length , ", alt=", elev, ", az=", azimut);
+//		console.log("WARNING: target has no name, dist= " , length , ", alt=", elev, ", az=", azimut);
 	}
 
   latitude = Cesium.Math.toRadians(latitude);
@@ -49,7 +49,7 @@ function arrowFromTo(latitude, longitude, height, elev, azimut, length, width, c
 	if (drawOrNot) {
   	drawLine(originC3.x ,originC3.y, originC3.z, result.x ,result.y, result.z, width, color, false, targetName);
 	} else {
-console.log("not drawn target ' " + targetName + "'");
+//console.log("not drawn target ' " + targetName + "'");
 		return result;
 	}
 
