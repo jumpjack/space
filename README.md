@@ -36,4 +36,9 @@ Mostra come variano le curve di alba e tramonto con e senza ora legale a seconda
 - [Calcoli telescopio](http://win98.altervista.org/telescopio.html)
 ![image](https://github.com/jumpjack/space/assets/1620953/14f53ead-560e-45e1-aefd-a81115e4a7cc)
 
+- [Moon local time calculator](http://win98.altervista.org/space/exploration/moon/moontime.html)
+
+Calculates the "equivalent" local time on specific location on Moon surface, assuming that 06:00 is sunrise, 12:00 is noon and 18:00 is sunset, just to figure out how the shadows are in a landing site.
+
+![image](https://github.com/jumpjack/space/assets/1620953/98f6a062-e279-4d2a-98be-a99ece0ad89b)
 
