@@ -8,6 +8,9 @@
 <!--
 Astrophotography ephemeris calculator bu Luca Cassioli
 
+v.0.9.0 Mapbox to openStreetMap
+
+
 v. 0.8.0m
 - Using MeeusJS for moon and sun positions
 - Uniformed colors of selected lines and rows
@@ -123,7 +126,7 @@ V.0.0.1: First working version. To do:
   <script src="leaflet.circle-sector.js"></script>
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.80/Build/Cesium/Cesium.js"></script>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.80/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-<script src = "moonposition.js"></script> <!-- debug: posizione corretta??? -->
+<!--<script src = "moonposition.js"></script>  -->
 <script src = "meeusJS.js"></script>
 <script src = "meeus-easy.js"></script>
 
@@ -134,7 +137,7 @@ V.0.0.1: First working version. To do:
 
 <body>
 <center>Moon ephemeris calculator for photographers<br>
-v.0.8.0m - 03/mar/2023<br>
+v.0.9.0 - 19/09/2023<br>
 </center>
 <table border=1>
 <tr>
@@ -1691,7 +1694,8 @@ viewer.camera.changed.addEventListener(() => {
   var popup = L.popup();
   markerLayer = L.layerGroup().addTo(mymap);
 
-  L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  //L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
     maxZoom: 18,
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
       'Imagery Â© <a href="https://www.mapbox.com/">Mapbox</a>',
