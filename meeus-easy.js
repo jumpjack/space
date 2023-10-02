@@ -25,6 +25,12 @@ function mooncalcMeeus(myDateJS, lat, lon, height) {
      azDeg = 180.0 + azDeg;
   }
 
+	var riseH_GMT = A.Coord.secondsToHMSStr(times.rise).substr(0,2);
+	var riseM_GMT = A.Coord.secondsToHMSStr(times.rise).substr(3,2);
+	var transitH_GMT = A.Coord.secondsToHMSStr(times.transit).substr(0,2);
+	var transitM_GMT = A.Coord.secondsToHMSStr(times.transit).substr(3,2);
+	var setH_GMT = A.Coord.secondsToHMSStr(times.set).substr(0,2);
+	var setM_GMT = A.Coord.secondsToHMSStr(times.set).substr(3,2);
   return {
     moonAzimuthDegrees : azDeg,
     moonAzimuthRad : azRad,
@@ -34,12 +40,12 @@ function mooncalcMeeus(myDateJS, lat, lon, height) {
     moonIllumFractionDetailPercentage : k,
     moonPhase : i,
     rise : A.Coord.secondsToHMSStr(times.rise),
-    riseJS : new Date(myDateJS.getFullYear() + "-" + (myDateJS.getMonth()+1) +  "-" +  myDateJS.getDate() + " " +  A.Coord.secondsToHMSStr(times.rise)),
+    riseJS : new Date(Date.UTC(myDateJS.getFullYear(), myDateJS.getMonth(), myDateJS.getDate() , riseH_GMT, riseM_GMT , 0)),
     transit : A.Coord.secondsToHMSStr(times.transit) ,
-    transitJS : new Date(myDateJS.getFullYear() + "-" + (myDateJS.getMonth()+1) + "-" +myDateJS.getDate() + " " +  A.Coord.secondsToHMSStr(times.transit)),
+    transitJS : new Date(Date.UTC(myDateJS.getFullYear(), myDateJS.getMonth(), myDateJS.getDate() , transitH_GMT, transitM_GMT , 0)),
     set: A.Coord.secondsToHMSStr(times.set),
-    setJS : new Date(myDateJS.getFullYear() + "-" + (myDateJS.getMonth()+1) + "-" +myDateJS.getDate() + " " + A.Coord.secondsToHMSStr(times.set)),
-
+    setJS : new Date(Date.UTC(myDateJS.getFullYear(), myDateJS.getMonth(), myDateJS.getDate() , setH_GMT, setM_GMT , 0)),
+	timesRaw: times
   }
 }
 
@@ -63,17 +69,25 @@ function suncalcMeeus(myDateJS, lat, lon, height) {
   // gets the rise, transit and set time of the sun
   var times = A.Solar.times(jdo, coord);
 
+	var riseH_GMT = A.Coord.secondsToHMSStr(times.rise).substr(0,2);
+	var riseM_GMT = A.Coord.secondsToHMSStr(times.rise).substr(3,2);
+	var transitH_GMT = A.Coord.secondsToHMSStr(times.transit).substr(0,2);
+	var transitM_GMT = A.Coord.secondsToHMSStr(times.transit).substr(3,2);
+	var setH_GMT = A.Coord.secondsToHMSStr(times.set).substr(0,2);
+	var setM_GMT = A.Coord.secondsToHMSStr(times.set).substr(3,2);
+
+
   return {
     sunAzimuthRad : azRad,
     sunAltitudeRad : altRad,
     sunAzimuthDegrees : azDeg,
     sunAltitudeDegrees : altDeg,
     rise : A.Coord.secondsToHMSStr(times.rise),
-    riseJS : new Date(myDateJS.getFullYear() + "-" + (myDateJS.getMonth()+1) + "-" + myDateJS.getDate() + " "  + A.Coord.secondsToHMSStr(times.rise)),
+    riseJS : new Date(Date.UTC(myDateJS.getFullYear(), myDateJS.getMonth(), myDateJS.getDate() , riseH_GMT, riseM_GMT , 0)),
     transit : A.Coord.secondsToHMSStr(times.transit) ,
-    transitJS : new Date(myDateJS.getFullYear() + "-" + (myDateJS.getMonth()+1) + "-" + myDateJS.getDate() + " "  + A.Coord.secondsToHMSStr(times.transit)),
+    transitJS : new Date(Date.UTC(myDateJS.getFullYear(), myDateJS.getMonth(), myDateJS.getDate() , transitH_GMT, transitM_GMT , 0)),
     set: A.Coord.secondsToHMSStr(times.set),
-    setJS : new Date(myDateJS.getFullYear() + "-" + (myDateJS.getMonth()+1) + "-" + myDateJS.getDate() + " "  + A.Coord.secondsToHMSStr(times.set)),
+    setJS : new Date(Date.UTC(myDateJS.getFullYear(), myDateJS.getMonth(), myDateJS.getDate() , setH_GMT, setM_GMT , 0)),
   }
 }
 
