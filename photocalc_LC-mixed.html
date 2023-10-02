@@ -8,6 +8,8 @@
 <!--
 Astrophotography ephemeris calculator bu Luca Cassioli
 
+v.0.10.0 Fixed sunset/sunrise timings bug (GMT/local) for moon and sun, also in meeus library
+
 v.0.9.0 Mapbox to openStreetMap
 
 
@@ -25,7 +27,7 @@ v. 0.8.0m
 V.0.7.0m
 - Both original SunCalc library and derived ones give wrong values for moon;
 swithcing to german algotithm converted to library: https://www.dannybekaert.be/en/moonposition
-Other possibility: Real library "https://github.com/Fabiz/MeeusJs" nased on Meeus paper.
+Other possibility: Real library "https://github.com/Fabiz/MeeusJs" based on Meeus paper.
 - Fixed lookAtMoon button and various functions related to Moon position.
 - Messing up with 3d lines pointing to moon and sun, to be fixed.
 
@@ -117,27 +119,27 @@ V.0.0.1: First working version. To do:
 -->
 
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta charset="utf-8">
-  <link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
-  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
-  <!--<script src="https://unpkg.com/leaflet-center-cross@0.0.8/dist/leaflet.CenterCross.js"></script>-->
-  <script src="leaflet.circle-sector.js"></script>
-<script src="https://cesium.com/downloads/cesiumjs/releases/1.80/Build/Cesium/Cesium.js"></script>
-  <link href="https://cesium.com/downloads/cesiumjs/releases/1.80/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-<!--<script src = "moonposition.js"></script>  -->
-<script src = "meeusJS.js"></script>
-<script src = "meeus-easy.js"></script>
-
-
-  <script src="mylocations.js"></script>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta charset="utf-8">
+	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
+	<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+	<!--<script src="https://unpkg.com/leaflet-center-cross@0.0.8/dist/leaflet.CenterCross.js"></script>-->
+	<script src="leaflet.circle-sector.js"></script>
+	<script src="https://cesium.com/downloads/cesiumjs/releases/1.80/Build/Cesium/Cesium.js"></script>
+	<link href="https://cesium.com/downloads/cesiumjs/releases/1.80/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+	<!--
+		<script src = "moonposition.js"></script>
+	-->
+	<script src = "meeusJS.js"></script>
+	<script src = "meeus-easy.js"></script>
+	<script src="mylocations.js"></script>
 
 </head>
 
 <body>
 <center>Moon ephemeris calculator for photographers<br>
-v.0.9.0 - 19/09/2023<br>
+v.0.10.0 - 02/10/2023<br>
 </center>
 <table border=1>
 <tr>
@@ -469,8 +471,13 @@ Observing location:<br>
 Tune parameters, then click on map to see moon visibility directions.<br>
 <br>
 Use <a href="http://xjubier.free.fr/en/site_pages/astronomy/MoonExposureCalculator.html">this site</a> to calculate best exposure data to take photos of the moon.<br>
-
-
+Time check:<br>
+<a href="https://www.mooncalc.org/#/41.9969,12.8408,3/2023.10.02/08:48/1/3">Mooncalc.org</a><br>
+<a href="https://www.suncalc.org/#/40.1789,-3.5156,3/2023.10.02/08:48/1/3">Suncalc.org</a><br>
+<a href="http://suncalc.net/#/51.508,-0.125,2/2023.10.02/08:48">Suncalc.net</a><br>
+Moon data:<br>
+<a href="http://moon.owghat.com/">http://moon.owghat.com/</a><br>
+<br>
   <script src="utilsLC.js"></script> <!-- Basic drawing functions -->
   <script src="basicLC.js"></script> <!-- Cesium viewer setup - to be placed AFTER body, else it will not find Cesium DIV container-->
   <script src="suncalc-new.js"></script> <!-- Mia versione modificata-->
@@ -2050,47 +2057,53 @@ function mapAlreadyClicked(e) {
 
       //specialTimes = SunCalc.getSunTimes(baseDateJS, e.latlng.lat,  e.latlng.lng);
       specialTimes = getSunTimesMeeus(baseDateJS, e.latlng.lat,  e.latlng.lng, 0);
-console.log("SUN:", specialTimes);
+//console.log("SUN:", specialTimes);
+
 
       sunRise = specialTimes.riseJS;
-      sunRise_ms = sunRise.getTime() - sunRise.getTimezoneOffset()*60000;
+// console.log("sunRise for ", baseDateJS, " :  ", sunRise);
+ 		sunRise_ms = sunRise.getTime();// - sunRise.getTimezoneOffset()*60000;
       selectedRange["sunrise"] = sunRise_ms;
-      sunRiseH = sunRise.getHours();
-      sunRiseM = sunRise.getMinutes();
+      sunRiseH = new Date(sunRise_ms).getHours();
+      sunRiseM = new Date(sunRise_ms).getMinutes();
+// console.log("sunRiseM:", sunRiseH,sunRiseM);
 
       sunSet = specialTimes.setJS;
-      sunSet_ms = sunSet.getTime() - sunSet.getTimezoneOffset()*60000;
+      sunSet_ms = sunSet.getTime();// - sunSet.getTimezoneOffset()*60000;
       selectedRange["sunset"] = sunSet_ms;
-      sunSetH = sunSet.getHours();
-      sunSetM = sunSet.getMinutes();
+      sunSetH = new Date(sunSet_ms).getHours();
+      sunSetM = new Date(sunSet_ms).getMinutes();
+
+//console.log("sunSet for ", baseDateJS, " :  ", sunSet);
 
       sunTimesStr = lead0(sunRiseH) + ":" + lead0(sunRiseM) + "/" + lead0(sunSetH) + "." + lead0(sunSetM);
+//console.log("sunTimesStr:", sunTimesStr);
 
-      localRiseDate = new Date(sunRise.getTime() - sunRise.getTimezoneOffset() * 60000);
+      localRiseDate = new Date(sunRise.getTime());// - sunRise.getTimezoneOffset() * 60000);
       localRiseH = localRiseDate.getHours();
       localRiseM = localRiseDate.getMinutes();
 
-      localSetDate = new Date(sunSet.getTime() - sunSet.getTimezoneOffset() * 60000);
+      localSetDate = new Date(sunSet.getTime());// - sunSet.getTimezoneOffset() * 60000);
       localSetH = localSetDate.getHours();
       localSetM = localSetDate.getMinutes();
-
+//console.log("localRiseH:", localRiseH,localRiseM,localSetH,localSetM);
 
 //      moonSpecialTimes = SunCalc.getMoonTimes(baseDateJS, e.latlng.lat,  e.latlng.lng);
       moonSpecialTimes = getMoonTimesMeeus(baseDateJS, e.latlng.lat,  e.latlng.lng, 0);
 //console.log("MOON:", moonSpecialTimes);
       moonRise = moonSpecialTimes.riseJS;
-      moonRise_ms = moonRise.getTime();// - sunSet.getTimezoneOffset()*60000;
-      moonRiseH = moonRise.getHours();
-      moonRiseM = moonRise.getMinutes();
+      moonRise_ms = moonRise.getTime();// sunSet.getTimezoneOffset()*60000;
+      moonRiseH = new Date(moonRise_ms).getHours();
+      moonRiseM = new Date(moonRise_ms).getMinutes();
 
       moonSet = moonSpecialTimes.setJS;
-      moonSet_ms = moonSet.getTime();// - sunSet.getTimezoneOffset()*60000;
-      moonSetH = moonSet.getHours();
-      moonSetM = moonSet.getMinutes();
+      moonSet_ms = moonSet.getTime();// sunSet.getTimezoneOffset()*60000;
+      moonSetH = new Date(moonSet_ms).getHours();
+      moonSetM = new Date(moonSet_ms).getMinutes();
 
       moonTimesStr = lead0(moonRiseH) + ":" + lead0(moonRiseM) + "/" + lead0(moonSetH) + "." + lead0(moonSetM);
 
-console.log(baseDateJS + "  Sun: " + lead0(sunRiseH) + ":" + lead0(sunRiseM) + "-" +  lead0(sunSetH) + ":" + lead0(sunSetM) + ", Moon: " + lead0(moonRiseH) + ":" + lead0(moonRiseM) + "-"  + lead0(moonSetH) + ":" + lead0(moonSetM));
+//console.log(baseDateJS + "  Sun: " + lead0(sunRiseH) + ":" + lead0(sunRiseM) + "-" +  lead0(sunSetH) + ":" + lead0(sunSetM) + ", Moon: " + lead0(moonRiseH) + ":" + lead0(moonRiseM) + "-"  + lead0(moonSetH) + ":" + lead0(moonSetM));
 
 //console.log(">>>>>>>>>>>>>>>>>>",radioIndex);
       ////// Define central date around which to calculate moon data /////
@@ -2106,7 +2119,7 @@ console.log("Custom range");
       }
       refDateReadable = refDateJS.getFullYear() + "/" + (refDateJS.getMonth() +1 ) + "/" + refDateJS.getDate() + " " + lead0(refDateJS.getHours()) + ":" + lead0(refDateJS.getMinutes());
 
-console.log("Calcolo tra " + new Date(refDate -substeps.value * STEP_SECONDS * 1000) +  " e " + new Date(refDate  + substeps.value * STEP_SECONDS * 1000) );
+//console.log("Calcolo tra " + new Date(refDate -substeps.value * STEP_SECONDS * 1000) +  " e " + new Date(refDate  + substeps.value * STEP_SECONDS * 1000) );
       for (var stepIndex = -substeps.value; stepIndex <= substeps.value; stepIndex++) { // Calculate for times around the reference time, which can be custom or sunset or sunrise
         moonDate_ms = refDate + stepIndex * STEP_SECONDS * 1000
         moonDate = new Date(moonDate_ms);
@@ -2131,20 +2144,20 @@ var moonData = findMoon(moonDate,  e.latlng.lat,  e.latlng.lng, false);
 //        moonpos = SunCalc.getMoonPosition(moonDate, e.latlng.lat,  e.latlng.lng);
 //        moonAltitude = (moonpos.altitudeDegrees).toFixed(0)*1.0;
 //        moonAzimuth = moonpos.azimuthDegrees.toFixed(0)*1.0;
-        moonAltitude = (moonData.altRad*180/3.14).toFixed(1)*1.0;//moonData.moonAltitudeRefractionDegrees.toFixed(0)*1.0;
-        moonAzimuth = (moonData.azRad*180/3.14).toFixed(1)*1.0; //moonAzimuthDegrees.toFixed(0)*1.0;
-console.log(moonDateReadable, moonPhase, moonAltitude, moonAzimuth );
+        moonAltitude = moonData.altDeg.toFixed(1)*1.0;//moonData.moonAltitudeRefractionDegrees.toFixed(0)*1.0;
+        moonAzimuth = moonData.azDeg.toFixed(1)*1.0; //moonAzimuthDegrees.toFixed(0)*1.0;
+console.log(moonDateReadable, moonPhase, moonAzimuth , moonAltitude);
 
         sunpos = SunCalc.getPosition(moonDate, e.latlng.lat,  e.latlng.lng);
-        sunAz = sunpos.azimuthDegrees.toFixed(0)*1.0;
-        sunAlt = sunpos.altitudeDegrees.toFixed(0)*1.0;
+        sunAz = sunpos.azimuthDegrees.toFixed(1)*1.0;
+        sunAlt = sunpos.altitudeDegrees.toFixed(1)*1.0;
         fullDate = moonDate.getFullYear() + "/" + (moonDate.getMonth()+1) + "/" + moonDate.getDate()+ " " + (moonDate.getHours() +1.0) + ":"+ moonDate.getMinutes();
         if ((moonPhase*1.0 > minPhase.value ) && (moonPhase*1.0 <= maxPhase.value)) {
           highlight="#PHASE#";
           if ((moonAltitude*1.0 > minAlt.value) && (moonAltitude*1.0 <= maxAlt.value)) {
             highlight += "#ALT#";
             if ((moonAzimuth*1.0 > minAz.value) && (moonAzimuth*1.0 <= maxAz.value)) {
-console.log(">>>>>>>>>>>>", moonDateReadable, moonPhase, moonAltitude, moonAzimuth );
+//console.log(">>>>>>>>>>>>", moonDateReadable, moonPhase, moonAltitude, moonAzimuth );
               highlight += "#AZ#";
               atLeastOneResult = true;
               if (!dayHeaderPrinted) {
@@ -2340,27 +2353,27 @@ function createDayRow(linesCount, moonDateH, moonDateM, moonPhase, moonAltitude,
               row.appendChild(cell);
 
               cell = document.createElement("TD");
-              cell.innerHTML = moonPhase;
+              cell.innerHTML = moonPhase + "%";
               cell.setAttribute("style","text-align: center;");
               row.appendChild(cell);
 
               cell = document.createElement("TD");
-              cell.innerHTML = moonAltitude;
+              cell.innerHTML = moonAltitude;//.toFixed(2);
               cell.setAttribute("style","text-align: center;");
               row.appendChild(cell);
 
               cell = document.createElement("TD");
-              cell.innerHTML = moonAzimuth;
+              cell.innerHTML = moonAzimuth;//.toFixed(2);
               cell.setAttribute("style","text-align: center;");
               row.appendChild(cell);
 
               cell = document.createElement("TD");
-              cell.innerHTML = sunAlt;
+              cell.innerHTML = sunAlt;//.toFixed(2);
               cell.setAttribute("style","text-align: center;");
               row.appendChild(cell);
 
               cell = document.createElement("TD");
-              cell.innerHTML = sunAz;
+              cell.innerHTML = sunAz;//.toFixed(2);
               cell.setAttribute("style","text-align: center;");
               row.appendChild(cell);
 /*
@@ -2538,7 +2551,7 @@ function drawProfile(lng1, lat1, h1, lng2, lat2, h2) {
     //console.log(carto.height);
   }
 
-console.log(cartesians);
+//console.log(cartesians);
 
 scene
     .clampToHeightMostDetailed(cartesians)
