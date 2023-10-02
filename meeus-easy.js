@@ -31,6 +31,7 @@ function mooncalcMeeus(myDateJS, lat, lon, height) {
 	var transitM_GMT = A.Coord.secondsToHMSStr(times.transit).substr(3,2);
 	var setH_GMT = A.Coord.secondsToHMSStr(times.set).substr(0,2);
 	var setM_GMT = A.Coord.secondsToHMSStr(times.set).substr(3,2);
+	
   return {
     moonAzimuthDegrees : azDeg,
     moonAzimuthRad : azRad,
