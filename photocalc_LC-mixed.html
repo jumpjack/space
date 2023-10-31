@@ -8,6 +8,15 @@
 <!--
 Astrophotography ephemeris calculator bu Luca Cassioli
 
+v.0.11.0 
+- Fixed bug of azimuth, it was in Meeus library, which calculated it from South
+- Added dynamic links to mooncalc
+- Added "loader" overlay until all tiles are loaded
+- Fixed bug of error message printed upon clicking buttons in table lines
+- Changed Cesium time to local
+- Added height and zoom values to interface
+- Removed button "C" from lines (to copy data to manual input form)
+
 v.0.10.0 Fixed sunset/sunrise timings bug (GMT/local) for moon and sun, also in meeus library
 
 v.0.9.0 Mapbox to openStreetMap
@@ -128,18 +137,26 @@ V.0.0.1: First working version. To do:
 	<script src="leaflet.circle-sector.js"></script>
 	<script src="https://cesium.com/downloads/cesiumjs/releases/1.80/Build/Cesium/Cesium.js"></script>
 	<link href="https://cesium.com/downloads/cesiumjs/releases/1.80/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-	<!--
-		<script src = "moonposition.js"></script>
-	-->
-	<script src = "meeusJS.js"></script>
+	 <link rel="stylesheet" href="photocalc-overlay.css"> <!-- Per overlay di caricamento -->
+	<script src="https://cdn.jsdelivr.net/npm/luxon@1.25.0/build/global/luxon.min.js"></script> <!-- per orario locale in cesium-->
+	<!--<script src = "astronomy.browser.js"></script>-->
+
+	<script src = "meuusjs.1.0.4.min.js"></script>
 	<script src = "meeus-easy.js"></script>
 	<script src="mylocations.js"></script>
 
 </head>
 
 <body>
+    <!-- Contenitore per l'overlay di caricamento -->
+    <div id="overlay" class="overlay">
+        <div class="loader"></div>
+		<div id="overlayText" class="overlay-text">Caricamento in corso...</div>
+    </div>
+    
+	
 <center>Moon ephemeris calculator for photographers<br>
-v.0.10.0 - 02/10/2023<br>
+v.0.11.0 - 31/10/2023<br>
 </center>
 <table border=1>
 <tr>
@@ -343,11 +360,12 @@ OUTPUT:<br>
         <tr>
             <td>
               Manual input: <br>
-              From: <input type="text" value="41.993197, 12.635758, 300" id="flyLocGoogle" name="flyLocGoogle" size="22" ><br>
-            <button onclick="posFromMap()">Map center</button>
-             <button onclick="posFromObserver()">Observer</button><br>
-              To:  Az: <input type="text" value = "256" id = "flyaz" name="flyaz" size="3"> Alt: <input type="text" value = "0" id = "flyel" name="flyel" size="3"><br>
-              Date:  <input type="text" value = "2023-03-13T08:00:00.000Z" id = "resultDate" name="resultDate"> <button onclick="destFromLine()">From line</button><br>
+              Origin: <input type="text" value="41.993197, 12.635758, 300" id="flyLocGoogle" name="flyLocGoogle" size="22" ><br>
+             Copy from:<button onclick="posFromMap()">Map center</button>
+              <button onclick="posFromObserver()">Observer pos</button><br>
+              Dest: <button onclick="destFromLine()">Copy from line</button><br>
+			  Az: <input type="text" value = "256" id = "flyaz" name="flyaz" size="3"> Alt: <input type="text" value = "0" id = "flyel" name="flyel" size="3"><br>
+              Date:  <input type="text" value = "2023-03-13T08:00:00.000Z" id = "resultDate" name="resultDate"> <br>
               <button onclick="gotoLocation()">Fly to</button><br>
             </td>
             <td>
@@ -368,7 +386,7 @@ OUTPUT:<br>
             <table border =0>
               <tr>
                 <td>
-                Height
+                Height:<span id="spnCameraHeight" name="spnCameraHeight">200</span>
                 </td>
               </tr>
               <tr>
@@ -392,7 +410,7 @@ OUTPUT:<br>
             <table border = 0>
               <tr>
                 <td>
-                Zoom
+                Zoom: <span id="spnCameraZoom" name="spnCameraZoom">50</span>
                 </td>
               </tr>
               <tr>
@@ -533,6 +551,40 @@ const LOC_SUN = -2;
 pointedLocation = LOC_MOON;
 
 scene = viewer.scene;
+
+scene.globe.tileLoadProgressEvent.addEventListener(function(a) {
+  // Il terreno predefinito è completamente caricato
+  console.log("Loading....",a);
+  document.getElementById("overlayText").innerHTML = "Caricamento in corso... " + a;
+  if (scene.globe.tilesLoaded) {
+  	//alert("READY!");
+	  const overlay = document.getElementById('overlay');
+  overlay.style.display = 'none';
+  changeHeight();
+ }
+});
+
+
+
+
+
+
+////// // Imposta ora locale in Cesium
+viewer.animation.viewModel.timeFormatter = function(date, viewModel) {
+	dateTime=new Date(date);
+	var localTime =  dateTime.getHours().toString().padStart(2, '0') + ":" + dateTime.getMinutes().toString().padStart(2, '0')  + ":" + dateTime.getSeconds().toString().padStart(2, '0');  
+	return localTime;//dateTime.toLocaleString();
+};
+
+viewer.animation.viewModel.dateFormatter = function(date, viewModel) {
+	dateTime=new Date(date);
+	var localTime = dateTime.getFullYear() + "/" + (dateTime.getMonth()+1).toString().padStart(2, '0') + "/" + dateTime.getDate().toString().padStart(2, '0');
+	return localTime;//dateTime.toLocaleString();
+};
+
+///////////
+
+
 CesiumCamera = new Cesium.Camera(scene);
 targetAvailable = false;
 cameraAvailable = false;
@@ -629,16 +681,48 @@ function  posFromObserver() {
 }
 
 
+
 function destFromLine() {
+console.log("destFromLine: bufLineTarget=",bufLineTarget)
     if (bufLineTarget !== null) {
       flyaz.value = bufLineTarget.moonAz;
       flyel.value = bufLineTarget.moonAlt;
       var a = new Date(bufLineTarget.time);
       var UTCtime = a.getUTCFullYear() + "-" + (a.getUTCMonth()+1) + "-" + a.getUTCDate() + " " + a.getUTCHours() + ":" + a.getUTCMinutes() + ":" + a.getUTCSeconds()
-      resultDate.value = UTCtime;
+      resultDate.value = UTCtime;	  
     } else {
-        alert ("Please select a direction on map");
+        alert ("Please select a direction on the map or a line on the table.");
     }
+}
+
+
+
+
+function openMoonCalc(lin) {
+console.log("openMoonCalc for line ", lin , ":  bufLineTarget=",bufLineTarget);
+console.log("openMoonCalc:  , myLines[lin]=", myLines[lin]);
+	// https://www.mooncalc.org/#/LAT,LON,ZOOM/YYYY.MM.DD/hh:mm/HEIGTH/MAP_STYLE ; hour in local time, not GMT
+		var a = new Date(myLines[lin].options.myTime);
+		var moonCalcDate = a.getFullYear() + "." + (a.getMonth()+1).toString().padStart(2, '0') + "." + a.getDate().toString().padStart(2, '0') + "/" + a.getHours().toString().padStart(2, '0') + ":" + a.getMinutes().toString().padStart(2, '0') + "/1/3";
+		var moonCalcLocation = myLines[lin].options.mySource.lat.toFixed(6) + "," + myLines[lin].options.mySource.lng.toFixed(6) + ",115"; 
+		var moonCalcUrl =  "https://www.mooncalc.org/#/" + moonCalcLocation + "/" +  moonCalcDate;
+console.log(moonCalcDate, moonCalcUrl);		
+		window.open(moonCalcUrl, "_blank");
+}
+
+
+
+function clickOnF(lin) {
+console.log("Elaboro click su F in linea ", lin);
+	highlightLinePermanently(lin);
+	posFromObserver();
+console.log("CLICKF line :",myLines[lin].options.myTime);	
+	var localDate = new Date(myLines[lin].options.myTime);
+console.log("CLICKF localDate:",localDate);	
+	var myDate = localDate.getFullYear() + "/" +  (localDate.getMonth()+1).toString().padStart(2, '0') + "/" +  localDate.getDate().toString().padStart(2, '0') + " " + localDate.getHours().toString().padStart(2, '0') + ":" + localDate.getMinutes().toString().padStart(2, '0');
+console.log("CLICKF myDate:",myLines[lin].options.myAz,  myLines[lin].options.myAlt, myDate);	
+	destFromTableRow( myLines[lin].options.myAz,  myLines[lin].options.myAlt, myDate);
+	gotoLocation();
 }
 
 function destFromTableRow(az,el, UTCtime) {
@@ -648,8 +732,8 @@ function destFromTableRow(az,el, UTCtime) {
 }
 
 
-function updateTooltips() {
 
+function updateTooltips() {
     var edges = getMapEdges(mymap,false);
     CORRECTX = (mymap.getBounds().getEast() - mymap.getBounds().getWest())/50;
     CORRECTY = (mymap.getBounds().getNorth() - mymap.getBounds().getSouth())/50;
@@ -769,19 +853,38 @@ function findMoon(dateJS, lat, lon, debug) {
 ///// Calculate Elevation and Azimuth of Moon as seen from given position
 //  var moonData = SunCalc.getMoonPosition(dateJS, lat,  lon);
       moonData = mooncalcMeeus(dateJS, lat, lon, 0);
-      moonPhase = moonData.moonIllumFractionDetailPercentage; // Debug: serve qui?
+//      moonPhase = moonData.moonIllumFractionDetailPercentage; // Debug: serve qui?
+		  
+	
+/////////////
 
+/*var obs = new Astronomy.Observer(parseFloat(lat), parseFloat(lon) ,  100);  
+var moonRD = Astronomy.Equator(Astronomy.Body.Moon, dateJS, obs, true, true); 
+var moonAltAzAstro = Astronomy.Horizon(dateJS, obs , moonRD.ra, moonRD.dec, false) 
+*/
+////////////
+		  
       if (debug) {
        console.log(moonData.moonAzimuthDegrees,  moonData.moonAltitudeRefractionDegrees );
+console.log("FINDMOON",dateJS, lat, parseFloat(lat), lon, debug)
       }
 
         return (
           {
             altRad:  moonData.moonAltitudeRefractionRad,
             azRad:   moonData.moonAzimuthRad,
-            altDeg :  moonData.moonAltitudeRefractionDegrees,
-            azDeg :  moonData.moonAzimuthDegrees
+            altDeg : moonData.moonAltitudeRefractionDegrees,
+            azDeg : moonData.moonAzimuthDegrees
           }
+/*
+        return (
+          {
+            altRad:  moonAltAzAstro.altitude, //moonData.moonAltitudeRefractionRad,
+            azRad:   moonAltAzAstro.azimuth, // moonData.moonAzimuthRad,
+            altDeg : moonAltAzAstro.altitude * 180 / Math.PI, //moonData.moonAltitudeRefractionDegrees,
+            azDeg :  moonAltAzAstro.azimuth * 180 / Math.PI //moonData.moonAzimuthDegrees
+          }*/
+
         );
       }
 
@@ -1137,6 +1240,7 @@ function zoomOut() {
 function changeZoom() {
   inputFOV = 90 - rngZoom.value;
   viewer.camera.frustum.fov = Cesium.Math.toRadians(inputFOV);
+	document.getElementById("spnCameraZoom").innerHTML = rngZoom.value;
 }
 
 
@@ -1179,6 +1283,7 @@ function setCameraHeight (deltaHeight) {
         },
         duration : 0
     });
+	document.getElementById("spnCameraHeight").innerHTML = cameraCartographic.height;
 }
 
 
@@ -1525,14 +1630,18 @@ console.log("Final: LAT=", updatedPositions[0].latitude*180.0/Math.PI, "LON=", u
   //setupCesiumCompass();
 
 viewer.camera.changed.addEventListener(() => {
-    rngHeight.value = viewer.camera.positionCartographic.height;
-    setMoonSun3dLines()
-    updateCameraData();
-    updateMoonData();
-    updateLocationLines();
-    updateCameraLine();
-    setCompassRotation(-viewer.camera.heading * 180 / 3.14);
-    updateTooltips();
+	if (scene.globe.tilesLoaded) {
+	    rngHeight.value = viewer.camera.positionCartographic.height;
+	    setMoonSun3dLines()
+	    updateCameraData();
+	    updateMoonData();
+	    updateLocationLines();
+	    updateCameraLine();
+	    setCompassRotation(-viewer.camera.heading * 180 / 3.14);
+	    updateTooltips();
+	} else {
+		// Waiting tile loading...
+	}
 
 })
 
@@ -1705,7 +1814,7 @@ viewer.camera.changed.addEventListener(() => {
   //L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
     maxZoom: 18,
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
-      'Imagery Â© <a href="https://www.mapbox.com/">Mapbox</a>',
+      'Imagery Ã‚Â© <a href="https://www.mapbox.com/">Mapbox</a>',
     id: 'mapbox/streets-v11',
     tileSize: 512,
     zoomOffset: -1
@@ -1940,6 +2049,7 @@ console.log("Permanent:",lineNum,selectedLine);
       } else {
         if (myLines[lineNum]) {
           myLines[lineNum].setStyle({color : "#5555AA", weight : 5}) // Highlight line
+console.log("MYLINE:", 	myLines[lineNum]);	  
         }
         if (document.getElementById("result_" + lineNum)) {
           document.getElementById("result_" + lineNum).setAttribute("style","background-color:#5555AA"); // Highlight table row
@@ -2125,33 +2235,18 @@ console.log("Custom range");
         moonDate = new Date(moonDate_ms);
         moonDateReadable = moonDate.getDate() + "/" + (moonDate.getMonth() +1 ) + "/" + moonDate.getFullYear() + " " + lead0(moonDate.getHours()) + ":" + lead0(moonDate.getMinutes());
 
-//        moonData = mymooncalc(moonDate, e.latlng.lat,  e.latlng.lng, 0, 1 );
-//        moonData = mooncalcMeeus(moonDate,  e.latlng.lat,  e.latlng.lng, 0);
 var moonData = findMoon(moonDate,  e.latlng.lat,  e.latlng.lng, false);
 
-/*
-    var moonData = findMoon(tempDateJS, tempLat, tempLon, false); // calculate moonAlt and moonAz
-    spnMoonAlt.innerHTML = (moonData.altRad*180/3.14).toFixed(1)*1.0;
-    spnMoonAz.innerHTML = (moonData.azRad*180/3.14).toFixed(1)*1.0;
-                altRad:  moonData.moonAltitudeRefractionRad,
-            azRad:   moonData.moonAzimuthRad,
-            altDeg :  moonData.moonAltitudeRefractionDegrees,
-            azDeg :  moonData.moonAzimuthDegrees
-*/
-//        moonPhase = ((SunCalc.getMoonIllumination(moonDate).fraction)*100).toFixed(0)*1.0;
+
         moonPhase = (mooncalcMeeus(moonDate,  e.latlng.lat,  e.latlng.lng, 0).moonIllumFractionDetailPercentage * 100).toFixed(0)*1.0; 
-        
-//        moonpos = SunCalc.getMoonPosition(moonDate, e.latlng.lat,  e.latlng.lng);
-//        moonAltitude = (moonpos.altitudeDegrees).toFixed(0)*1.0;
-//        moonAzimuth = moonpos.azimuthDegrees.toFixed(0)*1.0;
-        moonAltitude = moonData.altDeg.toFixed(1)*1.0;//moonData.moonAltitudeRefractionDegrees.toFixed(0)*1.0;
+                moonAltitude = moonData.altDeg.toFixed(1)*1.0;//moonData.moonAltitudeRefractionDegrees.toFixed(0)*1.0;
         moonAzimuth = moonData.azDeg.toFixed(1)*1.0; //moonAzimuthDegrees.toFixed(0)*1.0;
-console.log(moonDateReadable, moonPhase, moonAzimuth , moonAltitude);
+//console.log(moonDateReadable, moonPhase, moonAzimuth , moonAltitude);
 
         sunpos = SunCalc.getPosition(moonDate, e.latlng.lat,  e.latlng.lng);
         sunAz = sunpos.azimuthDegrees.toFixed(1)*1.0;
         sunAlt = sunpos.altitudeDegrees.toFixed(1)*1.0;
-        fullDate = moonDate.getFullYear() + "/" + (moonDate.getMonth()+1) + "/" + moonDate.getDate()+ " " + (moonDate.getHours() +1.0) + ":"+ moonDate.getMinutes();
+        fullDate = moonDate.getFullYear() + "/" + (moonDate.getMonth()+1) + "/" + moonDate.getDate()+ " " + (moonDate.getHours()) + ":"+ moonDate.getMinutes();
         if ((moonPhase*1.0 > minPhase.value ) && (moonPhase*1.0 <= maxPhase.value)) {
           highlight="#PHASE#";
           if ((moonAltitude*1.0 > minAlt.value) && (moonAltitude*1.0 <= maxAlt.value)) {
@@ -2389,10 +2484,9 @@ function createDayRow(linesCount, moonDateH, moonDateM, moonPhase, moonAltitude,
               row.appendChild(cell);
 */
               cell = document.createElement("TD");
-              cell.innerHTML = "<button onclick='destFromLine()'>C</button><button onclick='selectedLine = " + linesCount + ";highlightLinePermanently(" + linesCount + ");posFromObserver();destFromTableRow(" +
-                               moonAzimuth + "," +
-                               moonAltitude + ",\"" +
-                               d + "\");gotoLocation()'>F</button>";
+			  // <button title='Copy to manual input' onclick='destFromLine()'>C</button>
+              cell.innerHTML = "<button onclick='clickOnF(" + linesCount + ")' title='Fly to'>F</button>" + 
+			  					"<button onclick='openMoonCalc(" + linesCount + ")' title='Open related Mooncalc page'>MC</button>";
               cell.setAttribute("style","text-align: center;");
               row.appendChild(cell);
 
@@ -2407,6 +2501,11 @@ function createDayRow(linesCount, moonDateH, moonDateM, moonPhase, moonAltitude,
 
                 // Upon clicking on a result in table, permanently select the row, highlight the line, show its values, store its data, set camera view...
                 child.addEventListener("click", function(cell) {
+console.log("CLICK SU TABELLA: ", cell.srcElement.innerText ,cell);	
+				if ((cell.srcElement.innerText === "F") || (cell.srcElement.innerText === "MC")){
+console.log("Pulsante F, esco");				
+					return;	// Don't do anything if click is on "F" button
+				}
                   var parentRow = cell.srcElement.parentNode;
                   lineNumber = parentRow.id.split("_")[1] * 1; // result_xxx : xxx is the line number
 
@@ -2627,11 +2726,14 @@ function createMoonSun3dLines() {
   });
 }
 
-function setMoonSun3dLines(debug) {
-// debug
-    var tempDate = Cesium.JulianDate.toDate(viewer.clock.currentTime);
-    moonData = mooncalcMeeus(tempDate, mymap.getCenter().lat,  mymap.getCenter().lng, 0)
-     sunData = suncalcMeeus(tempDate, mymap.getCenter().lat,  mymap.getCenter().lng, 0)
+function setMoonSun3dLines(debug) {	
+    var tempDate = Cesium.JulianDate.toDate(viewer.clock.currentTime);	
+	if (isNaN(tempDate.secondsOfDay)) {
+		console.log("ERRORE DATA!!");
+		return;
+	}
+    moonData = mooncalcMeeus(tempDate, mymap.getCenter().lat,  mymap.getCenter().lng, 0)	
+    sunData = suncalcMeeus(tempDate, mymap.getCenter().lat,  mymap.getCenter().lng, 0)
 
 //console.log(mymap.getCenter().lat, mymap.getCenter().lng, 0, moonData.moonAltitudeRefractionDegrees, moonData.moonAzimuthDegrees, moonData.moonDistance*1000, 1, Cesium.Color.WHITE,true, "", false) // debug: non si vede?!?
       moonpos = arrowFromTo(mymap.getCenter().lat, mymap.getCenter().lng, 0, moonData.moonAltitudeRefractionDegrees, moonData.moonAzimuthDegrees, moonData.moonDistance*1000, 1, Cesium.Color.WHITE,false);
