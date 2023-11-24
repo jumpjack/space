@@ -7,7 +7,7 @@ function mooncalcMeeus(myDateJS, lat, lon, height) {
   var tp = A.Moon.topocentricPosition(jdo, coord, true);
   var altRad = tp.hz.alt;
   var altDeg = altRad * 180 / Math.PI;
-  var azRad = tp.hz.az
+  var azRad = tp.hz.az + Math.PI; // debug: come da istruzioni del prof. Meeus, per calcolare azimuth da nord bisogna aggiungere 180, sennò è da sud!
   var azDeg = azRad * 180 / Math.PI;
   var distKm =  tp.delta;
 
@@ -20,9 +20,9 @@ function mooncalcMeeus(myDateJS, lat, lon, height) {
   var k = A.MoonIllum.illuminated(i);
   var chi =  A.MoonIllum.positionAngle(tp.eq, suneq);
 
-  if (azRad < 0) {
-     azRad = Math.PI + azRad;
-     azDeg = 180.0 + azDeg;
+  if (azRad > 2*Math.PI) {
+     azRad = azRad - Math.PI;
+     azDeg = azDeg -180.0;
   }
 
 	var riseH_GMT = A.Coord.secondsToHMSStr(times.rise).substr(0,2);
