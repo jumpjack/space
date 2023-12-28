@@ -6,6 +6,7 @@ myLocations = [
 { lat : 42.009892, lng : 12.841129, height: 779, name : "San Polo dei Cavalieri"},
 { lat : 45.080779, lng : 7.767619, height: 680, name : "Basilica di Superga (Torino)"},
 { lat : 45.668002, lng : 7.090502, height: 3779, name : "Monviso"},
+ { lat : 45.139278, lng : 7.865018, height: 3779, name : "Foto2023"},
 ]
 
  
