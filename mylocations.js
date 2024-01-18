@@ -7,6 +7,9 @@ myLocations = [
 { lat : 45.080680, lng : 7.768051, height: 680, name : "Basilica di Superga (Torino)"},
 { lat : 44.667312, lng : 7.090381, height: 3779, name : "Monviso"},
 { lat : 45.127805, lng : 7.846985, height: 350, name : "Foto2023"},
+ { lat : -22.9524648, lng: -43.2105244, height : 73, name : "Cristo redentore (Brasile)"},
+ { lat : -22.8809612, lng: -43.1051128, height : 1000, name : "Foto Cristo redentore 2024?"},
+ 
 ]
 
  
