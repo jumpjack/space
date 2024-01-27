@@ -8,6 +8,9 @@
 <!--
 Astrophotography ephemeris calculator bu Luca Cassioli
 
+v.0.12.0
+- Added url parameters management
+
 v.0.11.0 
 - Fixed bug of azimuth, it was in Meeus library, which calculated it from South
 - Added dynamic links to mooncalc
@@ -156,7 +159,7 @@ V.0.0.1: First working version. To do:
     
 	
 <center>Moon ephemeris calculator for photographers<br>
-v.0.11.0 - 31/10/2023<br>
+v.0.12.0 - 27/01/2024<br>
 </center>
 <table border=1>
 <tr>
@@ -396,7 +399,7 @@ OUTPUT:<br>
               </tr>
               <tr>
                 <td>
-                  <input style="vertical-align: bottom;"type="range" orient="vertical" step="10" value = "200" id = "rngHeight" name = "rngHeight" min = "1" max  = "10000" onChange="changeHeight()">
+                  <input style="vertical-align: bottom;"type="range" orient="vertical" step="10" value = "200" id = "rngHeight" name = "rngHeight" min = "1" max  = "1000" onChange="changeHeight()">
                 </td>
               </tr>
               <tr>
@@ -549,18 +552,24 @@ const LOC_MOON = -1;
 const LOC_SUN = -2;
 
 pointedLocation = LOC_MOON;
+firstRun = true;
 
 scene = viewer.scene;
 
 scene.globe.tileLoadProgressEvent.addEventListener(function(a) {
-  // Il terreno predefinito è completamente caricato
+  // Il terreno predefinito � completamente caricato
   console.log("Loading....",a);
   document.getElementById("overlayText").innerHTML = "Caricamento in corso... " + a;
   if (scene.globe.tilesLoaded) {
   	//alert("READY!");
+   
 	  const overlay = document.getElementById('overlay');
   overlay.style.display = 'none';
   changeHeight();
+  
+  
+
+      
  }
 });
 
@@ -1193,7 +1202,10 @@ function gotoLocation() {
   inputAlt = inputArray[2]*1.0;
   inputAz = document.getElementById("flyaz").value *1.0;
   inputPitch = document.getElementById("flyel").value *1.0;
-  viewer.camera.setView({  // debug flyto
+changeHeight();
+    
+      viewer.camera.setView({  // debug flyto
+
       destination: Cesium.Cartesian3.fromDegrees(inputLon, inputLat, inputAlt),
       orientation: {
         heading: Cesium.Math.toRadians(inputAz),
@@ -1203,8 +1215,10 @@ function gotoLocation() {
   });
   viewer.camera.frustum.fov = storeFOV;
 
+
   var currentTime = Cesium.JulianDate.fromDate(new Date(document.getElementById("resultDate").value));
   var endTime = Cesium.JulianDate.addDays(currentTime, 1, new Cesium.JulianDate());
+console.log("AUTOCHECK:", inputLon, inputLat, inputAlt, inputAz, inputPitch, storeFOV,  currentTime, endTime)  ;
 
   viewer.clock.currentTime = currentTime;
   viewer.timeline.zoomTo(currentTime, endTime);
@@ -1639,6 +1653,9 @@ viewer.camera.changed.addEventListener(() => {
 	    updateCameraLine();
 	    setCompassRotation(-viewer.camera.heading * 180 / 3.14);
 	    updateTooltips();
+
+
+        
 	} else {
 		// Waiting tile loading...
 	}
@@ -1652,7 +1669,7 @@ viewer.camera.changed.addEventListener(() => {
 
 
   ///// Go to start position /////
-  CesiumCamera.flyTo({
+/*  CesiumCamera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(12.635758, 41.993197, 667),
       orientation: {
         //heading: Cesium.Math.toRadians(60.0),
@@ -1661,9 +1678,48 @@ viewer.camera.changed.addEventListener(() => {
       },
   });
 
-
-
   changeZoom(); // as per zoom slider
+  
+ */
+ 
+  
+  ///////////
+//if (firstRun) {
+  urlParams = getURLParameters();
+  var inputLat = parseFloat(urlParams.inputLat);
+  var inputLon = parseFloat(urlParams.inputLon);
+  var inputAlt = parseFloat(urlParams.inputAlt);
+  var inputAz = parseFloat(urlParams.inputAz);
+  var inputPitch = parseFloat(urlParams.inputPitch);
+  var currentTime = new Date(urlParams.currentTime);
+  var zoomVal = new Date(urlParams.zoom);
+  
+
+
+ if (
+    urlParams &&
+    urlParams.inputLat !== undefined &&
+    urlParams.inputLon !== undefined &&
+    urlParams.inputAlt !== undefined  &&
+    urlParams.inputAz !== undefined &&
+    urlParams.inputPitch !== undefined &&
+    urlParams.currentTime !== undefined  &&
+    urlParams.zoom !== undefined
+
+  ) {
+        populateInterfaceFromURL(urlParams);
+        gotoLocation();
+        console.log("Showing url-specifiied location/time")
+    } else {
+        console.log("Showing predefined location and current time", urlParams)
+    }
+    firstRun = false;
+//}
+  
+  //////////
+  
+  
+  
 
   dayTable = document.createElement("table");
   dayTable.border = 1;
@@ -1814,7 +1870,7 @@ viewer.camera.changed.addEventListener(() => {
   //L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
     maxZoom: 18,
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
-      'Imagery Ã‚Â© <a href="https://www.mapbox.com/">Mapbox</a>',
+      'Imagery Â© <a href="https://www.mapbox.com/">Mapbox</a>',
     id: 'mapbox/streets-v11',
     tileSize: 512,
     zoomOffset: -1
@@ -2915,6 +2971,34 @@ console.log("^^^^^^^^^");
       inters:  Intersez2Segm
     }
 }
+
+function getURLParameters() {
+  var params = {};
+  var url = window.location.href;
+  var paramArray = url.slice(url.indexOf('?') + 1).split('&');
+
+  for (var i = 0; i < paramArray.length; i++) {
+    var param = paramArray[i].split('=');
+    params[param[0]] = param[1];
+  }
+
+  return params;
+}
+
+function populateInterfaceFromURL(urlParams) {
+console.log("urlParams",urlParams);
+  document.getElementById("flyLocGoogle").value = urlParams.inputLat + ", " + urlParams.inputLon + ", " + urlParams.inputAlt;
+  document.getElementById("rngHeight").value = urlParams.inputAlt;
+  document.getElementById("flyaz").value = urlParams.inputAz;
+  document.getElementById("flyel").value = urlParams.inputPitch;
+  document.getElementById("resultDate").value = urlParams.currentTime;
+  document.getElementById("rngZoom").value = urlParams.zoom;
+  document.getElementById("spnCameraZoom").value = urlParams.zoom;
+  //document.getElementById("spnCameraHeight").value = urlParams.inputAlt;
+}
+
+
+
 
 </script>
 
