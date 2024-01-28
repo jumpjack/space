@@ -8,6 +8,14 @@
 <!--
 Astrophotography ephemeris calculator bu Luca Cassioli
 
+v.0.13.0
+- Added options to:
+    - Remove sky
+    - Add far mountains
+    - Add OpenStreetMap 3d buildings    
+- Added realtime moon tracking
+- Restyled interface for better use on mobile (to be completed)
+
 v.0.12.0
 - Added url parameters management
 
@@ -159,7 +167,7 @@ V.0.0.1: First working version. To do:
     
 	
 <center>Moon ephemeris calculator for photographers<br>
-v.0.12.0 - 27/01/2024<br>
+v.0.13.0 - 28/01/2024<br>
 </center>
 <table border=1>
 <tr>
@@ -167,7 +175,7 @@ v.0.12.0 - 27/01/2024<br>
 <table border = 4>
   <tr>
     <td style="vertical-align: top;">
-    <button onclick="clearMap()">Clear map</button><br>
+    
 INPUT:<br>
       <table  border= 1>
         <tr>
@@ -292,6 +300,7 @@ OUTPUT:<br>
     </td> <!-- End input for map-->
 
     <td style="vertical-align: top;">
+    <button onclick="clearMap()">Clear map</button><br>
       <div id="mapid" style="width: 600px; height: 340px;"></div>
             <div id="cesiumContainer" style="width: 600px; height: 340px;"></div>
 <div id="toolbar">
@@ -380,11 +389,35 @@ OUTPUT:<br>
 
 
     </td>
-    <td>
-      <table border = 1>
+    <td style="vertical-align: top;">
+    
+          <table border=1>
         <tr>
           <td>
-         </td>
+            <button onclick="lookUp()"style="height:50px;">^</button>
+            <button onclick="lookDown()"style="height:50px;">v</button>
+            <button onclick="northUp()"style="height:50px;">N</button>
+            <button onclick="lookAtMoon()"style="height:50px;">Moon</button>
+            <button onclick="lookAtSun()" style="height:50px;">Sun</button>
+            <button onclick="farMountains()" title = "Also show farther mountains (slow!)"style="height:50px;">Far mountains</button>
+            <big><big><button name="btnBuilding" id="btnBuilding" onclick="addBuildings()"" title="Add further 3d buildings (slow!)" style="height:50px;">More 3d buildings</button></big></big>
+            <button onclick="removeSky()"" title="Make dark new moon more visibile by making sky white (IRREVERSIBLE!)" style="height:50px;">!! REMOVE SKY !!</button>
+          </td>
+        </tr>
+        <tr>
+          <td>
+          <input type="checkbox" id = "chkGPS" name = "chkGPS" style="height:30px;width:30px;"> GPS
+          <input type="checkbox" id = "chkSync2D" name = "chkSync2D" style="height:30px;width:30px;"> Sync from 2D
+          <input type="checkbox" id = "chkTrack" name = "chkTrack" style="height:30px;width:30px;"> Track
+          <input type="checkbox" id = "chkLockH" name = "chkLockH" style="height:30px;width:30px;"> Lock height
+          <input type="text" id = "lockedHeight" name="lockedHeight" size=4 value = 200>
+          <input type="checkbox" id = "chkTrackMoon" name = "chkTrackMoon" style="height:30px;width:30px;"> Track Moon
+          </td>
+        </tr>
+
+      </table>
+      <table border = 1>
+        <tr>
           <td>
             <table border =0>
               <tr>
@@ -394,17 +427,19 @@ OUTPUT:<br>
               </tr>
               <tr>
                 <td>
-                <button onclick="heightPlus()">+</button>
+                
                 </td>
               </tr>
               <tr>
                 <td>
-                  <input style="vertical-align: bottom;"type="range" orient="vertical" step="10" value = "200" id = "rngHeight" name = "rngHeight" min = "1" max  = "1000" onChange="changeHeight()">
+                  <button onclick="heightMinus() style="height:30px;width:30px;"">-</button>
+                  <input style="vertical-align: bottom;height:30px;width:200px;" type="range"  orient="vertical" step="10" value = "200" id = "rngHeight" name = "rngHeight" min = "1" max  = "2000" onChange="changeHeight()">
+                  <button onclick="heightPlus()" style="height:30px;width:30px;">+</button>
                 </td>
               </tr>
               <tr>
                 <td>
-                <button onclick="heightMinus()">-</button>
+                
                 </td>
               </tr>
             </table>
@@ -418,40 +453,22 @@ OUTPUT:<br>
               </tr>
               <tr>
                 <td>
-                <button onclick="zoomIn()">+</button>
+                
                 </td>
               </tr>
               <tr>
                 <td>
-                <input style="vertical-align: bottom;"type="range" orient="vertical" step="1" value = "50" id = "rngZoom" name = "rngZoom" min = "1" max  = "89" onChange="changeZoom()">
+                <button onclick="zoomOut()" style="height:30px;width:30px;">-</button>
+                <input style="vertical-align: bottom;height:30px;width:200px;"type="range" width="300" orient="vertical" step="1" value = "50" id = "rngZoom" name = "rngZoom" min = "1" max  = "89" onChange="changeZoom()">
+                <button onclick="zoomIn()" style="height:30px;width:30px;">+</button>
                 </td>
               </tr>
               <tr>
                 <td>
-                <button onclick="zoomOut()">-</button>
+                
                 </td>
               </tr>
             </table>
-          </td>
-        </tr>
-      </table>
-      <table border=1>
-        <tr>
-          <td>
-            <button onclick="lookUp()">^</button>
-            <button onclick="lookDown()">v</button>
-            <button onclick="northUp()">N</button>
-            <button onclick="lookAtMoon()">Moon</button>
-            <button onclick="lookAtSun()">Sun</button>
-          </td>
-        </tr>
-        <tr>
-          <td>
-          <input type="checkbox" id = "chkGPS" name = "chkGPS"> GPS
-          <input type="checkbox" id = "chkSync2D" name = "chkSync2D"> Sync from 2D
-          <input type="checkbox" id = "chkTrack" name = "chkTrack"> Track
-          <input type="checkbox" id = "chkLockH" name = "chkLockH"> Lock height
-          <input type="text" id = "lockedHeight" name="lockedHeight" size=4 value = 200>
           </td>
         </tr>
         <tr>
@@ -459,8 +476,9 @@ OUTPUT:<br>
             <button onclick = "resetRoll()">Reset roll</button>
             <button onclick = "setMoonSun3dLines()">Update lines</button>
           </td>
-        </tr>
+        </tr>        
       </table>
+
       Camera controls:<br>
        - Rotate: SHIFT + LEFTMOUSE<br>
        - Move: WASD + PE<br>
@@ -1202,7 +1220,7 @@ function gotoLocation() {
   inputAlt = inputArray[2]*1.0;
   inputAz = document.getElementById("flyaz").value *1.0;
   inputPitch = document.getElementById("flyel").value *1.0;
-changeHeight();
+    changeHeight();
     
       viewer.camera.setView({  // debug flyto
 
@@ -1297,7 +1315,7 @@ function setCameraHeight (deltaHeight) {
         },
         duration : 0
     });
-	document.getElementById("spnCameraHeight").innerHTML = cameraCartographic.height;
+	document.getElementById("spnCameraHeight").innerHTML = rngHeight.value;//cameraCartographic.height;
 }
 
 
@@ -1411,6 +1429,7 @@ handler.setInputAction(function (position) {
   viewer.clock.onTick.addEventListener(function (clock) {
 
     updateMoonData();
+    if (chkTrackMoon.checked    ) lookAtMoon();
     //setMoonSun3dLines();
 
     // Change movement speed based on the distance of the camera to the surface of the ellipsoid.
@@ -2989,16 +3008,31 @@ function populateInterfaceFromURL(urlParams) {
 console.log("urlParams",urlParams);
   document.getElementById("flyLocGoogle").value = urlParams.inputLat + ", " + urlParams.inputLon + ", " + urlParams.inputAlt;
   document.getElementById("rngHeight").value = urlParams.inputAlt;
+  document.getElementById("spnCameraHeight").innerHTML = urlParams.inputAlt;
+  document.getElementById("rngHeight").value = urlParams.inputAlt;
   document.getElementById("flyaz").value = urlParams.inputAz;
   document.getElementById("flyel").value = urlParams.inputPitch;
   document.getElementById("resultDate").value = urlParams.currentTime;
   document.getElementById("rngZoom").value = urlParams.zoom;
   document.getElementById("spnCameraZoom").value = urlParams.zoom;
-  //document.getElementById("spnCameraHeight").value = urlParams.inputAlt;
+  document.getElementById("startDate").value = urlParams.currentTime;
 }
 
 
+function removeSky() {
+    scene.backgroundColor = Cesium.Color.WHITE.clone()
+    scene.skyBox.destroy();
+    scene.skyBox = undefined;
+}
 
+function farMountains() {
+    viewer.scene.fog.enabled=false
+}
+
+function addBuildings() {
+    viewer.scene.primitives.add(Cesium.createOsmBuildings()); // more 3d buildings  
+
+}
 
 </script>
 
