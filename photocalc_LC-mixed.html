@@ -4,9 +4,38 @@
   <title>Moon ephemeris for photographers</title>
 
   <meta charset="utf-8" />
+    <style>
+        .scrollable-table-container {
+            height: 70vh; /* Imposta l'altezza al 100% della viewport height */
+            display: flex;
+            flex-direction: column;
+        }
 
+        .scrollable-table {
+            flex: 1; /* Flessibilità per occupare lo spazio rimanente */
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
 <!--
 Astrophotography ephemeris calculator bu Luca Cassioli
+
+v.0.14.0
+- Made results table scrollable while maps remain fixed
+- Added table with highlighted result
+- Fixed ability to point from user selected position to user selected destination, including pitch
+- Reiewed interface for better mobile usability (to be completed: add button to disable everything but maps)
 
 v.0.13.0
 - Added options to:
@@ -167,7 +196,7 @@ V.0.0.1: First working version. To do:
     
 	
 <center>Moon ephemeris calculator for photographers<br>
-v.0.13.0 - 28/01/2024<br>
+v.0.14.0 - 29/01/2024<br>
 </center>
 <table border=1>
 <tr>
@@ -176,7 +205,6 @@ v.0.13.0 - 28/01/2024<br>
   <tr>
     <td style="vertical-align: top;">
     
-INPUT:<br>
       <table  border= 1>
         <tr>
           <td style="vertical-align: top;">
@@ -186,88 +214,76 @@ INPUT:<br>
             <label for="hourSunrise">Sunrise</label><br>
             <input type="radio" id="hourSunset" name="hourInterval" value="sunset" checked>
             <label for="hourSunset">Sunset</label><br>
+<!--			
             <input type="radio" id="hourCustom" name="hourInterval" value="custom">
             <label for="hourCustom">Custom</label>:<br>
             From <input type="text" id="startCustomRange" name="startCustomRange" value = "2022-02-05 17:00" ><br>
             To <input type="text" id="endCustomRange" name="endCustomRange" value = "2022-02-05 20:00"><br>
-
-            <table border=1> <!-- Map parameters -->
+-->
+            <table border=1 style="width:60%;"> <!-- Map parameters -->
               <tr>
                   <td>
-                      Altitude:
-                  </td>
+
+                  </td>			  
                   <td>
-                      From
-                  </td>
+					From
+                  </td>			  
                   <td>
-                      <input type="text" id="minAlt" name="minAlt" value=0 size=3>
+					To
+                  </td>			  
+              </tr>
+              <tr>
+                  <td width = "30" title="Altitude">
+                      Alt:
                   </td>
-                  <td>
-                      to
+                  <td width = "80">
+                      <input type="text" id="minAlt" name="minAlt" value=0 size=2>
                   </td>
-                  <td>
-                      <input type="text" id="maxAlt" name="maxAlt" value=10 size=3>
+                  <td width = "80">
+                      <input type="text" id="maxAlt" name="maxAlt" value=10 size=2>
                   </td>
               </tr>
 
               <tr>
-                  <td>
-                      Azimuth:
+                  <td title="Azimuth">
+                      Az:
+                  </td>
+                  <td >
+                      <input type="text" id="minAz" name="minAz" value=0 size=2>
                   </td>
                   <td>
-                      From
-                  </td>
-                  <td>
-                      <input type="text" id="minAz" name="minAz" value=0 size=3>
-                  </td>
-                  <td>
-                      to
-                  </td>
-                  <td>
-                      <input type="text" id="maxAz" name="maxAz" value=360 size=3>
+                      <input type="text" id="maxAz" name="maxAz" value=360 size=2>
                   </td>
               </tr>
 
               <tr>
-                  <td>
-                      Moon phase:
+                  <td title = "Moon phase percentage lower/upper limits">
+                      Phase:
                   </td>
                    <td>
-                      From
+                      <input title="Moon phase percentage lower limit" type="text" id="minPhase" name="minPhase" value=74 size=2>%
                   </td>
                    <td>
-                      <input type="text" id="minPhase" name="minPhase" value=74 size=3>%
-                  </td>
-                   <td>
-                      to
-                  </td>
-                   <td>
-                      <input type="text" id="maxPhase" name="maxPhase" value=100 size=3>%
+                      <input title="Moon phase percentage upper limit" type="text" id="maxPhase" name="maxPhase" value=100 size=2>%
                   </td>
               </tr>
 
 
               <tr>
                   <td>
-                  Next days:
+                  Days:
                   </td>
                   <td>
-
-                  </td>
-                  <td>
-                      <input type="text" id="nextDays" name="nextDays" value=30 size=3>
+                      <input type="text" id="nextDays" name="nextDays" value=30 size=2>
                   </td>
               </tr>
 
               <tr>
-                  <td>
-                      Substeps:
+                  <td title = "10 minutes steps before and after sunrise/sunset">
+                      Steps:
                   </td>
                   <td>
-
-                  </td>
-                  <td>
-                      <input type="text" id="substeps" name="substeps" value=3 size=3><br>
+                      <input type="text" id="substeps" name="substeps" value=3 size=2><br>
                   </td>
               </tr>
             </table> <!-- End map parameters -->
@@ -276,38 +292,71 @@ INPUT:<br>
 
         </tr>
       </table><br>
-OUTPUT:<br>
+
   <table border=1>
     <tr>
       <td style="vertical-align: top;">
-        <span id="spnObserverPopup" name = "spnObserverPopup" style="vertical-align: top;">
-        </span><br>
-        <!-- popup holder -->
-        Map center:<br> <span id="spnMapCenter" name="spnMapCenter">xx.xxxx, xx.xxxx</span>
-      </td>
-      <td  style="vertical-align: top;">
-        <span id="spnLinePopup" name = "spnLinePopup"  style="vertical-align: top;">
-        -
+		<!-- popup holder -->
+        Map center:<br> <span id="spnMapCenter" name="spnMapCenter">xx.xxxx, xx.xxxx</span><br>
+        <!-- popup holder -->        
+		
+		<span id="spnObserverPopup" name = "spnObserverPopup" style="vertical-align: top;">
+			-
         </span>
-        <!-- popup holder -->
+		
+        <span id="spnLinePopup" name = "spnLinePopup"  style="vertical-align: top;">
+        	-
+        </span>
       </td>
-    <td>
 
-    </td>
     <tr>
   </table>
-      Status: <span id="status" name="status">-</span><br>
+      <!--Status: <span id="status" name="status">-</span><br>-->
     </td> <!-- End input for map-->
 
     <td style="vertical-align: top;">
-    <button onclick="clearMap()">Clear map</button><br>
-      <div id="mapid" style="width: 600px; height: 340px;"></div>
-            <div id="cesiumContainer" style="width: 600px; height: 340px;"></div>
-<div id="toolbar">
-</div>
-
+		
+		<table>
+			<tr>
+				<td>
+					<div id="mapid" style="width: 500px; height: 300px;"></div>
+				</td>
+				<td>
+				<button onclick="clearMap()">Clear</button><br>
+				<br>
+				<br>
+          		<input title = "Automatically center map on device GPS position" type="checkbox" id = "chkGPS" name = "chkGPS" style="height:20px;width:20px;"> GPS				
+				</td>
+			</tr>
+		</table>
+		<table>
+		<tr>
+			<td>
+				<div id="cesiumContainer" style="width: 500px; height: 300px;"></div>
+				<!--<div id="toolbar">-->
+			<td>
+				<button title="Increase altitude" onclick="heightPlus()" style="height:30px;width:30px;">H+</button><br>
+				<button title="Decrease altitude" onclick="heightMinus()" style="height:30px;width:30px;">H-</button><br>
+				<br>
+				<button title="Increase zoom level" onclick="zoomIn()" style="height:30px;width:30px;">Z+</button><br>				
+                <button title="Decrease zoom level" onclick="zoomOut()" style="height:30px;width:30px;">Z-</button>
+			</td>
+		</tr>
+		<tr>
+			<td>
+	            <button onclick="lookUp()"style="height:50px;">^</button>
+	            <button onclick="lookDown()"style="height:50px;">v</button>
+	            <button onclick="northUp()"style="height:50px;">N</button>
+	            <button onclick="lookAtMoon()"style="height:50px;">Moon</button>
+	            <button onclick="lookAtSun()" style="height:50px;">Sun</button>
+	            <button onclick="farMountains()" title = "Also show farther mountains (slow!)"style="height:50px;">Far mountains</button>
+	            <big><big><button name="btnBuilding" id="btnBuilding" onclick="addBuildings()"" title="Add further 3d buildings (slow!)" style="height:50px;">More 3d buildings</button></big></big>
+	            <button onclick="removeSky()"" title="Make dark new moon more visibile by making sky white (IRREVERSIBLE!)" style="height:50px;">!NO SKY!</button>
+			</td>
+			</tr>		
+		</table>
+		</div>
     </td>
-
   </tr>
 
   <tr>
@@ -322,7 +371,8 @@ OUTPUT:<br>
       </tr>
         <tr>
           <td style="vertical-align: top;">
-          <!-- Radioboxes: -->
+          <!-- Radioboxes for Cesium mouse picking: -->
+		  
             <span>
               <input type="radio" id="camera" name="subject" value="camera" checked>
               <label for="camera">camera:</label>
@@ -336,11 +386,14 @@ OUTPUT:<br>
             <span id="targetPos" name="targetPos">-</span><br>
             Target Elevation: <span id="targetAlt" name="targetAlt">-</span><br>
             Target Azimuth: <span id="targetAz" name="targetAz">-</span><br>
-            <button onclick="manualPointing=false;  pointTargetFromCamera(cameraLatitudeDeg, cameraLongitudeDeg, cameraHeight, targetLatitudeDeg, targetLongitudeDeg, targetHeight)" title=" Look at target">PT</button><br>
-            <button onclick="" title="Look at direction from specified location">PDL</button><br>
-            <button onclick="" title="Look at direction from here">PDH</button><br>
-          </td>
-          <td>
+            <button onclick="pointTargetFromCamera(manualObserverLatitudeDeg, manualObserverLongitudeDeg, manualObserverHeight, targetLatitudeDeg, targetLongitudeDeg, targetHeight)" title=" Look at target">Origin -&gt; Target</button><br>
+            <button onclick="pointTargetFromHere()" title="Look at direction from specified location">Origin -&gt; Direction</button>
+			<input type="text" id = "manualAzimuth1" name = "manualAzimuth1"  size=2>&deg;  (not implemented)<br>
+			
+            <button onclick="" title="Look at direction from here">Center -&gt; Direction</button>
+			<input type="text" id = "manualAzimuth2" name = "manualAzimuth2" size=2>&deg;  (not implemented)<br>
+			
+
       <center>
       <table border = 1>
         <tr>
@@ -356,10 +409,10 @@ OUTPUT:<br>
           <td colspan=2><center><br>Camera</center></td>
         </tr>
         <tr>
-          <td>Pitch/El/Alt:</td> <td><span id="spnCameraPitchEl" name ="spnCameraPitchEl"></span></td>
+          <td>Pitch/<br>El/<br>Alt:</td> <td><span id="spnCameraPitchEl" name ="spnCameraPitchEl"></span></td>
         </tr>
         <tr>
-          <td>Yaw/Heading/Az:</td> <td><span id="spnCameraYawHeading" name ="spnCameraYawHeading"></span></td>
+          <td>Yaw/<br>Heading/<br>Az:</td> <td><span id="spnCameraYawHeading" name ="spnCameraYawHeading"></span></td>
         </tr>
         <tr>
           <td colspan = 2 style="width:220px"><center><span id="spnCameraLoc" style="width:220px" name ="spnCameraLoc"></span></center>
@@ -379,10 +432,12 @@ OUTPUT:<br>
 			  Az: <input type="text" value = "256" id = "flyaz" name="flyaz" size="3"> Alt: <input type="text" value = "0" id = "flyel" name="flyel" size="3"><br>
               Date:  <input type="text" value = "2023-03-13T08:00:00.000Z" id = "resultDate" name="resultDate"> <br>
               <button onclick="gotoLocation()">Fly to</button><br>
+			  <br>
+            Locations:<br>
+            <span id = "spnLocations" name="spnLocations"></span>			  
             </td>
             <td>
-            Locations:<br>
-            <span id = "spnLocations" name="spnLocations"></span>
+
             </td>
         </tr>
       </table>
@@ -394,19 +449,10 @@ OUTPUT:<br>
           <table border=1>
         <tr>
           <td>
-            <button onclick="lookUp()"style="height:50px;">^</button>
-            <button onclick="lookDown()"style="height:50px;">v</button>
-            <button onclick="northUp()"style="height:50px;">N</button>
-            <button onclick="lookAtMoon()"style="height:50px;">Moon</button>
-            <button onclick="lookAtSun()" style="height:50px;">Sun</button>
-            <button onclick="farMountains()" title = "Also show farther mountains (slow!)"style="height:50px;">Far mountains</button>
-            <big><big><button name="btnBuilding" id="btnBuilding" onclick="addBuildings()"" title="Add further 3d buildings (slow!)" style="height:50px;">More 3d buildings</button></big></big>
-            <button onclick="removeSky()"" title="Make dark new moon more visibile by making sky white (IRREVERSIBLE!)" style="height:50px;">!! REMOVE SKY !!</button>
           </td>
         </tr>
         <tr>
           <td>
-          <input type="checkbox" id = "chkGPS" name = "chkGPS" style="height:30px;width:30px;"> GPS
           <input type="checkbox" id = "chkSync2D" name = "chkSync2D" style="height:30px;width:30px;"> Sync from 2D
           <input type="checkbox" id = "chkTrack" name = "chkTrack" style="height:30px;width:30px;"> Track
           <input type="checkbox" id = "chkLockH" name = "chkLockH" style="height:30px;width:30px;"> Lock height
@@ -432,9 +478,9 @@ OUTPUT:<br>
               </tr>
               <tr>
                 <td>
-                  <button onclick="heightMinus() style="height:30px;width:30px;"">-</button>
+                  
                   <input style="vertical-align: bottom;height:30px;width:200px;" type="range"  orient="vertical" step="10" value = "200" id = "rngHeight" name = "rngHeight" min = "1" max  = "2000" onChange="changeHeight()">
-                  <button onclick="heightPlus()" style="height:30px;width:30px;">+</button>
+                  
                 </td>
               </tr>
               <tr>
@@ -458,9 +504,8 @@ OUTPUT:<br>
               </tr>
               <tr>
                 <td>
-                <button onclick="zoomOut()" style="height:30px;width:30px;">-</button>
                 <input style="vertical-align: bottom;height:30px;width:200px;"type="range" width="300" orient="vertical" step="1" value = "50" id = "rngZoom" name = "rngZoom" min = "1" max  = "89" onChange="changeZoom()">
-                <button onclick="zoomIn()" style="height:30px;width:30px;">+</button>
+                
                 </td>
               </tr>
               <tr>
@@ -491,14 +536,35 @@ OUTPUT:<br>
 </table>
     </td>
     <td style="vertical-align: top;">
-    <table>
-      <tr>
-        <td rowspan=2 style="vertical-align: top;">
-          <table id="tblResults" name="tblResults" border =0>
-          </table>
-        </td>
-      </tr>
-    </table>
+		<!--OUTPUT-->
+		<table>
+			<tr>
+				<td>
+				<div class="scrollable-table-container"  id="scrollableTableContainer">
+					<div class="scrollable-table" id="scrollableTable">
+						<table id="tblResults" name="tblResults" border =0>
+						</table>
+					</div>
+				</div>
+				</td>
+			</tr>
+			<tr>
+			<td title="highlighted result">
+				<table name="tblHighlighted" id="tblHighlighted">				
+					<tr name="tblHighlightedHeader" id="tblHighlightedHeader">
+						<td>
+						-
+						</td>
+					</tr>
+					<tr name="tblHighlightedRow" id="tblHighlightedRow">
+						<td>
+						-
+						</td>
+					</tr>
+				</table>			
+			</td>
+			</tr>
+		</table>
     </td>
   </tr>
 </table>
@@ -525,18 +591,14 @@ Moon data:<br>
 <script>
 
 ////////////// Cesium management
-var targetLatRad;
-var targetLonRad;
 var targetLatDeg;
 var targetLonDeg;
 var targetHeight;
 var targetAvailable;
-var cameraLongitudeDeg;
-var cameraLatitudeDeg;
-var cameraLongitudeRad;
-var cameraLatitudeRad;
-var cameraHeight;
-var cameraAvailable;
+var manualObserverLongitudeDeg;
+var manualObserverLatitudeDeg;
+var manualObserverHeight;
+var manualObserverAvailable;
 var ellipsoid = Cesium.Ellipsoid.WGS84;
 var cameraControlsEnabled = false;
 var currTime = new Date().getTime();
@@ -583,7 +645,7 @@ scene.globe.tileLoadProgressEvent.addEventListener(function(a) {
    
 	  const overlay = document.getElementById('overlay');
   overlay.style.display = 'none';
-  changeHeight();
+  //changeHeight();
   
   
 
@@ -614,7 +676,7 @@ viewer.animation.viewModel.dateFormatter = function(date, viewModel) {
 
 CesiumCamera = new Cesium.Camera(scene);
 targetAvailable = false;
-cameraAvailable = false;
+manualObserverAvailable = false;
 var startMousePosition;
 var mousePosition;
 compassCtx = null;
@@ -964,6 +1026,7 @@ console.log("FINDMOON",dateJS, lat, parseFloat(lat), lon, debug)
       Cesium.Matrix3.multiplyByVector(icrfToFixed, moonPosition, moonPosition);
       myObserver = new Cesium.Cartesian3.fromDegrees(lng, lat,  0);
       myPositionvector=Cesium.Cartesian3.subtract(myObserver, moonPosition, new Cesium.Cartesian3());
+	  
       viewer.camera.flyTo({
           destination: viewer.camera.position,
           orientation: myPositionvector,
@@ -1543,10 +1606,14 @@ function getMousePosition(pickedPosition) {
 
     if (document.getElementById("target").checked) {
       document.getElementById("targetPos").innerHTML = "please wait...";
+	   document.getElementById("targetAlt").innerHTML  = "";
+	   document.getElementById("targetAz").innerHTML  = "";
     }
 
     if (document.getElementById("camera").checked) {
       document.getElementById("cameraPos").innerHTML = "please wait...";
+	   document.getElementById("targetAlt").innerHTML  = "";
+	   document.getElementById("targetAz").innerHTML  = "";
     }
 
 
@@ -1573,15 +1640,17 @@ console.log("Final: LAT=", updatedPositions[0].latitude*180.0/Math.PI, "LON=", u
             targetLatitudeDeg = updatedPositions[0].latitude*180.0/Math.PI;
             targetLongitudeDeg = updatedPositions[0].longitude*180.0/Math.PI;
           targetHeight = updatedPositions[0].height*1.0;
+console.log("Aggiornato target:",targetLatitudeDeg,targetLongitudeDeg);			
             targetAvailable = true;
           }
 
           if (document.getElementById("camera").checked) {
             document.getElementById("cameraPos").innerHTML = (updatedPositions[0].longitude*180.0/Math.PI).toFixed(6)+ ", " + (updatedPositions[0].latitude*180.0/Math.PI).toFixed(6) + ",   " + updatedPositions[0].height.toFixed(0) + " (lon, lat, alt)";
-            cameraLatitudeDeg = updatedPositions[0].latitude*180.0/Math.PI;
-            cameraLongitudeDeg = updatedPositions[0].longitude*180.0/Math.PI;
-            cameraHeight = updatedPositions[0].height*1.0;
-            cameraAvailable = true;
+            manualObserverLatitudeDeg = updatedPositions[0].latitude*180.0/Math.PI;
+            manualObserverLongitudeDeg = updatedPositions[0].longitude*180.0/Math.PI;
+            manualObserverHeight = updatedPositions[0].height*1.0;
+            manualObserverAvailable = true;
+console.log("Aggiornato camera:",manualObserverLatitudeDeg,manualObserverLongitudeDeg);			
           }
         });
 
@@ -1600,7 +1669,7 @@ console.log("Final: LAT=", updatedPositions[0].latitude*180.0/Math.PI, "LON=", u
 
           if (document.getElementById("camera").checked) {
             document.getElementById("cameraPos").innerHTML = "Please retry";
-            cameraAvailable = false;
+            manualObserverAvailable = false;
           }
     }
 }
@@ -1650,10 +1719,10 @@ console.log("Final: LAT=", updatedPositions[0].latitude*180.0/Math.PI, "LON=", u
     createDayRow(0,"xx","xx", "xxx", "xxx", "xxx", "xxx", "xxx", "xx", "xx", "xx", "xx");
     dayTable.appendChild(row);
     tblResults.appendChild(dayTable);
-    spnObserverPopup.innerHTML = "Observer position:<br>"+
-            "Google: lat, lon, 0:<br>xx.xxxx, xx.xxxx, 0<br><br>"+
-            "Cesium: lon, lat, 0:<br>xx.xxxx, xx.xxxx, 0<br>";
-    spnLinePopup.innerHTML = "Selected:<br>Date: xxxx/xx/xx xx:xx<br>";
+    spnObserverPopup.innerHTML = "Selected observer position:<br><ul>"+
+            "<li>Google: lat, lon, 0:<br>xx.xxxx, xx.xxxx, 0</li>"+
+            "<li>Cesium: lon, lat, 0:<br>xx.xxxx, xx.xxxx, 0</li></ul>";
+    spnLinePopup.innerHTML = "<br>Selected direction:<br>Date: xxxx/xx/xx xx:xx<br>";
   }
 
 ///////////////////////////////////////////////
@@ -1731,6 +1800,7 @@ viewer.camera.changed.addEventListener(() => {
         console.log("Showing url-specifiied location/time")
     } else {
         console.log("Showing predefined location and current time", urlParams)
+		gotoLocation();
     }
     firstRun = false;
 //}
@@ -1787,7 +1857,7 @@ viewer.camera.changed.addEventListener(() => {
   cameraLine = L.polyline(
    [[0,0],
    [0,0]],
-    {weight : 5, color: '#FF4444'},
+    {weight : 5, color: '#FF4444', opacity: 0.5},
   ).addTo(cameraLineLayer);
 
 
@@ -1991,6 +2061,7 @@ function updateCameraLine() {
 //console.log("cameraHeading2=",cameraHeading);
       var cameraDest = destination(mymap.getCenter(),cameraHeading , (lineLength));
       cameraLine.setLatLngs([[mapCenter.lat,mapCenter.lng],[cameraDest.lat, cameraDest.lng]]);
+	  cameraLine.bringToFront()
   ///////////////
 
 }
@@ -2111,7 +2182,11 @@ function drawTableHeader(day, moonTimes, sunTimes) {
     if (line) {
       line.setStyle({color : HIGHLIGHT_LINE_COLOR, weight : 5})
       line.bringToFront();
+	  //tempResult = document.getElementById("result_" + line.options.lineCount);
       document.getElementById("result_" + line.options.lineCount).setAttribute("style","background-color:" + HIGHLIGHT_LINE_COLOR);
+	  //tempParentTable = document.getElementById("result_" + line.options.lineCount).parentElement.parentElement;
+	  //tempParentTableY = document.getElementById("result_" + line.options.lineCount).parentElement.parentElement.offsetTop
+	  scrollableTable.scrollTop = document.getElementById("result_" + line.options.lineCount).parentElement.parentElement.offsetTop; /// DEBUG
     }
   }
 
@@ -2127,7 +2202,13 @@ console.log("Permanent:",lineNum,selectedLine);
 console.log("MYLINE:", 	myLines[lineNum]);	  
         }
         if (document.getElementById("result_" + lineNum)) {
-          document.getElementById("result_" + lineNum).setAttribute("style","background-color:#5555AA"); // Highlight table row
+          	document.getElementById("result_" + lineNum).setAttribute("style","background-color:#5555AA"); // Highlight table row
+			//tblHighlighted = document.getElementById("tblHighlighted");
+			tblHighlightedHeader = document.getElementById("tblHighlightedHeader");
+			tblHighlightedRow = document.getElementById("tblHighlightedRow");
+			//tblHighlighted.innerHTML = ''
+			tblHighlightedHeader.innerHTML = document.getElementById("result_" + lineNum).parentElement.rows[0].innerHTML;
+			tblHighlightedRow.innerHTML = document.getElementById("result_" + lineNum).innerHTML;
         }
       }
     });
@@ -2186,13 +2267,13 @@ function mapAlreadyClicked(e) {
     startDateEnglish = startDate.substr(3,2) + "/" + startDate.substr(0,2) + "/" + startDate.substr(6,4) + " 12:00:00";
     startDateJS = new Date(startDateEnglish);
 
-    popupObserverText = "<br>Observer position: <br>Google: lat,lon,0: <br>"+
+    popupObserverText = "<br>Selected observer position:<br><ul><li>Google: lat,lon,0: <br>"+
       e.latlng.lat.toFixed(6) + " , " +
-      e.latlng.lng.toFixed(6) +  ",0<br><br>" +
+      e.latlng.lng.toFixed(6) +  ",0</li><li>" +
       "Cesium: lon, lat,0:<br>" +
       e.latlng.lng.toFixed(6) + "," +
       e.latlng.lat.toFixed(6) +
-      ",0<br><button onclick='posFromObserver()'>Copy</button><button onclick='posFromObserver();gotoLocation()'>Fly</button>";
+      ",0</li></ul><br><button onclick='posFromObserver()'>Copy</button><button onclick='posFromObserver();gotoLocation()'>Fly</button>";
 
     // Create marker on clicked position:
     markerA = L.marker([e.latlng.lat, e.latlng.lng], {draggable : true})
@@ -2228,6 +2309,7 @@ function mapAlreadyClicked(e) {
 
 
 
+	validResult=0;
     for (dayIndex = 0; dayIndex < nextDays.value; dayIndex++) {
       dayTable = document.createElement("table");
       dayTable.border = 1;
@@ -2333,7 +2415,9 @@ var moonData = findMoon(moonDate,  e.latlng.lat,  e.latlng.lng, false);
               if (!dayHeaderPrinted) {
                 drawTableHeader(baseDateReadable, moonTimesStr, sunTimesStr);
                 dayHeaderPrinted = true;
+				dayTable.setAttribute("id","dayTable_" + validResult);
               }
+			  validResult++;
 
               UTCMoonDate = new Date(moonDate.getTime());
               UTCMoonY = UTCMoonDate.getFullYear();
@@ -2402,7 +2486,7 @@ console.log("Line clicked, drawing moon ",thisLineEvent);
                 var moonDest = destination(mymap.getCenter(),bufLineTarget.moonAz, (100000));
                 moonLine.setLatLngs([[mapCenter.lat,mapCenter.lng],[moonDest.lat, moonDest.lng]]);
                 moonLine.setStyle({color : MOON_LINE_COLOR})
-                spnLinePopup.innerHTML = "SELECTED:<br>" + thisLineEvent.target.options.popupText + markerButtons;
+                spnLinePopup.innerHTML = "<br>Selected direction:<br>" + thisLineEvent.target.options.popupText + markerButtons;
                 selectedLine = thisLineEvent.target.options.lineCount;
                 highlightLinePermanently(thisLineEvent.target.options.lineCount);
 
@@ -2508,6 +2592,8 @@ console.log("Line clicked, drawing moon ",thisLineEvent);
 
         });
   status.innerHTML = "done";
+  document.getElementById("scrollableTableContainer").height=600;
+  document.getElementById("scrollableTable").height=600;
   } // function
 
 
@@ -2560,7 +2646,7 @@ function createDayRow(linesCount, moonDateH, moonDateM, moonPhase, moonAltitude,
 */
               cell = document.createElement("TD");
 			  // <button title='Copy to manual input' onclick='destFromLine()'>C</button>
-              cell.innerHTML = "<button onclick='clickOnF(" + linesCount + ")' title='Fly to'>F</button>" + 
+              cell.innerHTML = "<button onclick='clickOnF(" + linesCount + ")' title='Fly to'>F</button><br>" + 
 			  					"<button onclick='openMoonCalc(" + linesCount + ")' title='Open related Mooncalc page'>MC</button>";
               cell.setAttribute("style","text-align: center;");
               row.appendChild(cell);
@@ -2599,7 +2685,7 @@ console.log("Pulsante F, esco");
                   moonLine.setStyle({color : MOON_LINE_COLOR})
 
                   // Show data for selected line:
-                  spnLinePopup.innerHTML = "SELECTED:<br>" + myLines[lineNumber].options.popupText;
+                  spnLinePopup.innerHTML = "<br>Selected direction:<br>" + myLines[lineNumber].options.popupText;
 
                   // Highlight row in table:
                   selectedLine = lineNumber;
@@ -3034,6 +3120,51 @@ function addBuildings() {
 
 }
 
+function pointTargetFromCamera(latA, lonA, altA, latB, lonB, altB) {
+// params in degrees
+
+      var observerPos = {lng:lonA, lat:latA, height:altA};
+      var locationPos = {lng:lonB, lat:latB, height:altB};
+
+      // Now that all data are available, calculate pointing data:
+      var locationDir = getAltAz(observerPos, locationPos);
+      var locationAlt = locationDir.pitchDeg;
+      var locationAz = locationDir.headingDeg;
+
+      // Point camera in that direction:
+      viewer.camera.setView({
+          destination: Cesium.Cartesian3.fromDegrees(  observerPos.lng , observerPos.lat, observerPos.height+100), // Go to observer position,....
+          orientation: { // ... and look at location
+            heading: locationAz * 3.14/180,
+            pitch: locationAlt * 3.14/180,
+            roll: 0.0,
+          },
+      });
+
+	  
+	targetAlt.innerHTML = locationAlt.toFixed(0);
+	targetAz.innerHTML = locationAz.toFixed(0);
+
+console.log("Pointing from " + latA.toFixed(6), lonA.toFixed(6), altA.toFixed(0) + " to " + latB.toFixed(6), lonB.toFixed(6), altB.toFixed(0)  + ", dir:" + locationAz.toFixed(0), locationAlt.toFixed(0));
+
+}
+
+function pointTargetFromHere() {
+    // Ottieni la posizione della camera in coordinate cartesiane del mondo (WC)
+    var cameraPositionWC = viewer.camera.positionWC;
+
+    // Converti le coordinate cartesiane del mondo (WC) in coordinate terrestri (lat, lon, alt)
+    var ellipsoid = viewer.scene.globe.ellipsoid;
+    var cameraPositionCartographic = ellipsoid.cartesianToCartographic(cameraPositionWC);
+
+    // Ottieni latitudine, longitudine e altitudine
+    var latitude = Cesium.Math.toDegrees(cameraPositionCartographic.latitude);
+    var longitude = Cesium.Math.toDegrees(cameraPositionCartographic.longitude);
+    var altitude = cameraPositionCartographic.height;
+	
+	pointTargetFromCamera(latitude, longitude, altitude,  targetLatitudeDeg, targetLongitudeDeg, targetHeight)
+}
+	
 </script>
 
 
