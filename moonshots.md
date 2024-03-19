@@ -48,4 +48,4 @@ San pietro
 ![image](https://github.com/jumpjack/space/assets/1620953/6274ac43-a851-4180-85ea-aa0f61aed037)
 
  - [Test 24/3/2024](https://jumpjack.github.io/space/photocalc_LC-mixed.html?inputLat=42.036194&inputLon=12.668352&inputAlt=200&inputAz=91.5&inputPitch=4.1&currentTime=2024-03-24T17:13:21.000Z&zoom=88)
- - Test 25/3/2024
+
