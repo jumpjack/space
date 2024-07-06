@@ -35,9 +35,9 @@ Mostra come variano le curve di alba e tramonto con e senza ora legale a seconda
 ![image](https://user-images.githubusercontent.com/1620953/205701717-463d6e8d-b490-4e5a-ab87-75376762234e.png)
 
 - [Photocalc mixed](https://jumpjack.github.io/space/photocalc_LC-mixed.html) (leaflet+cesium, 2d+3d) (beta, broken) ([source](https://github.com/jumpjack/space/blob/main/photocalc_LC-mixed.html)https://github.com/jumpjack/space/blob/main/photocalc_LC-mixed.html)
-    - Foto famose:
+    - [Foto famose](https://github.com/jumpjack/space/blob/main/moonshots.md):
         - Cristo redentore - [5 maggio 2023](https://jumpjack.github.io/space/photocalc_LC-mixed.html?inputLat=-22.922034&inputLon=-43.095460&inputAlt=100&inputAz=254.6&inputPitch=1.9&currentTime=2023-05-05T08:43:00.000Z&zoom=88)
-        - Basilica di Superga - [14 novembre 2023](https://jumpjack.github.io/space/photocalc_LC-mixed.html?inputLat=-22.922034&inputLon=-43.095460&inputAlt=100&inputAz=254.6&inputPitch=1.9&currentTime=2023-05-05T08:43:00.000Z&zoom=88) 
+        - Basilica di Superga - [18 novembre 2023 - 12:13 GMT](https://jumpjack.github.io/space/photocalc_LC-mixed.html?inputLat=45.128310&inputLon=7.853022&inputAlt=700&inputAz=231.8&inputPitch=0.4&currentTime=2023-01-18T12:13:00.000Z&zoom=88)
 
 - [Calcoli telescopio](http://win98.altervista.org/telescopio.html)
 ![image](https://github.com/jumpjack/space/assets/1620953/14f53ead-560e-45e1-aefd-a81115e4a7cc)
