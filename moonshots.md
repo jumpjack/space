@@ -1,3 +1,30 @@
+# Foto famose
+
+## Cristo redentore
+
+[5 maggio 2023](https://jumpjack.github.io/space/photocalc_LC-mixed.html?inputLat=-22.922034&inputLon=-43.095460&inputAlt=100&inputAz=254.6&inputPitch=1.9&currentTime=2023-05-05T08:43:00.000Z&zoom=88)
+
+
+![image](https://github.com/jumpjack/space/assets/1620953/f3414982-e2fb-492b-9391-580d0f54e191)
+
+(by Leonardo Sens)
+
+![image](https://github.com/jumpjack/space/assets/1620953/e5ed5662-7a7e-44c0-8d6a-66f9731a2117)
+
+
+## Basilica di Superga
+
+[18 novembre 2023 - 12:13 GMT](https://jumpjack.github.io/space/photocalc_LC-mixed.html?inputLat=45.128310&inputLon=7.853022&inputAlt=700&inputAz=231.8&inputPitch=0.4&currentTime=2023-01-18T12:13:00.000Z&zoom=88)
+
+![image](https://github.com/jumpjack/space/assets/1620953/6d9e064a-4bdd-4f59-8d27-9db074699919)
+(by Valerio Minato))
+
+![image](https://github.com/jumpjack/space/assets/1620953/5d603f0b-123a-40a3-9e08-71cc10ce4930)
+
+[14 novembre 2023](https://jumpjack.github.io/space/photocalc_LC-mixed.html?inputLat=45.128310&inputLon=7.853022&inputAlt=700&inputAz=231.8&inputPitch=0.4&currentTime=2023-01-18T12:13:00.000Z&zoom=88)
+
+# Miei test
+
 San pietro
 
 
