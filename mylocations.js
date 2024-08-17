@@ -11,6 +11,8 @@ myLocations = [
  { lat : 45.127805,   lng :  7.846985,  height:   350,  name : "Foto Superga 14/11/2023"},
  { lat : -22.9524648, lng: -43.2105244, height:    73,  name : "Cristo redentore"},
  { lat : -22.922725,  lng: -43.095310,  height:     0,  name : "Foto Cristo redentore 4/05/2023"}, 
+ { lat : 41.8402526,  lng: 12.8875972,  height:     100,  name : "Santuario Palestrina"}, 
+ { lat : 41.845612,  lng: 12.8953044 ,  height:     200,  name : "Rocca Castel San Pietro"}
 ]
 
  
