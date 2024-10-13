@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eventi di Lancio e Conto alla Rovescia</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.33/moment-timezone-with-data.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        button {
+            margin-right: 5px;
+        }
+        #info-box {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="title">Eventi di Lancio e Conto alla Rovescia</h1>
+    
+    <div>
+        <label for="tempo-zero" id="label-liftoff">Inserisci il tempo di Liftoff (YYYY-MM-DD HH:mm):</label>
+        <input type="text" id="tempo-zero" placeholder="YYYY-MM-DD HH:mm" value="2024-10-13 14:00">
+        <button id="set-btn">SET</button>
+        <button id="play-btn">PLAY</button>
+        <button id="pause-btn" disabled>PAUSE</button>
+        <button id="lang-btn">EN/IT</button>
+    </div>
+
+    <div id="info-box"></div>
+
+    <table id="eventi-tabella">
+        <thead>
+            <tr>
+                <th>T-</th>
+                <th id="th-event">Evento</th>
+                <th id="th-event-time">Orario Evento</th>
+                <th id="th-countdown">Conto alla Rovescia</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+        const eventi = [
+            { tempo: "-7:00:00", nome: "Road Closure Window Begins", nomeIT: "Inizio Finestra di Chiusura Strada" },
+            { tempo: "-4:00:00", nome: "Tank Farm Conditioning", nomeIT: "Condizionamento Serbatoi" },
+            { tempo: "-1:15:00", nome: "FD is GO for propellant load", nomeIT: "FD dà l'OK per il carico propellente" },
+            { tempo: "-0:49:50", nome: "Ship Fuel Load Start", nomeIT: "Inizio Carico Carburante Nave" },
+            { tempo: "-0:48:40", nome: "Ship LOX Load Start", nomeIT: "Inizio Carico LOX Nave" },
+            { tempo: "-0:40:40", nome: "Booster Fuel Load Start", nomeIT: "Inizio Carico Carburante Booster" },
+            { tempo: "-0:34:03", nome: "Booster LOX Load Start", nomeIT: "Inizio Carico LOX Booster" },
+            { tempo: "-0:19:40", nome: "Raptor Engine Chill", nomeIT: "Raffreddamento Motori Raptor" },
+            { tempo: "-0:02:50", nome: "Propellant Load Complete", nomeIT: "Completamento Carico Propellente" },
+            { tempo: "-0:00:40", nome: "Optional Hold Point", nomeIT: "Punto di Attesa Opzionale" },
+            { tempo: "-0:00:30", nome: "FD is GO for launch", nomeIT: "FD dà l'OK per il lancio" },
+            { tempo: "-0:00:25", nome: "DSS Activates", nomeIT: "Attivazione DSS" },
+            { tempo: "-0:00:10", nome: "Flame Deflector Activates", nomeIT: "Attivazione Deflettore di Fiamma" },
+            { tempo: "-0:00:03", nome: "Raptor Ignition Sequence", nomeIT: "Sequenza di Accensione Raptor" },
+            { tempo: "0:00:00", nome: "Liftoff", nomeIT: "Decollo" },
+    { tempo: "00:01:02", nome: "Max q during ascent (moment of peak mechanical stress on the rocket)", nomeIT: "Max q durante l'ascesa (momento di massimo stress meccanico sul razzo)", stato: "Planned" },
+    { tempo: "00:02:33", nome: "Super Heavy main engine cutoff (MECO)", nomeIT: "Spegnimento motori principali di Super Heavy (MECO)", stato: "Planned" },
+    { tempo: "00:02:41", nome: "Starship engine ignition and stage separation (hot-staging)", nomeIT: "Accensione motori Starship e separazione stadi (hot-staging)", stato: "Planned" },
+    { tempo: "00:02:48", nome: "Super Heavy boostback burn start", nomeIT: "Inizio della manovra di boostback di Super Heavy", stato: "Planned" },
+    { tempo: "00:03:41", nome: "Super Heavy boostback burn shutdown", nomeIT: "Spegnimento della manovra di boostback di Super Heavy", stato: "Planned" },
+    { tempo: "00:03:43", nome: "Hot-stage jettison", nomeIT: "Distacco dello stadio hot-stage", stato: "Planned" },
+    { tempo: "00:06:08", nome: "Super Heavy is supersonic", nomeIT: "Super Heavy diventa supersonico", stato: "Planned" },
+    { tempo: "00:06:33", nome: "Super Heavy landing burn start", nomeIT: "Inizio della manovra di atterraggio di Super Heavy", stato: "Planned" },
+    { tempo: "00:06:56", nome: "Super Heavy landing burn shutdown and catch attempt", nomeIT: "Spegnimento della manovra di atterraggio di Super Heavy e tentativo di recupero", stato: "Planned" },
+    { tempo: "00:08:27", nome: "Starship engine cutoff (SECO)", nomeIT: "Spegnimento motori Starship (SECO)", stato: "Planned" },
+    { tempo: "00:48:03", nome: "Starship entry", nomeIT: "Ingresso di Starship", stato: "Planned" },
+    { tempo: "01:00:50", nome: "Estimated time of max q during Starship's descent", nomeIT: "Tempo stimato di max q durante la discesa di Starship", stato: "Planned" },
+    { tempo: "01:02:34", nome: "Starship is transonic", nomeIT: "Starship diventa transonico", stato: "Planned" },
+    { tempo: "01:03:43", nome: "Starship is subsonic", nomeIT: "Starship diventa subsonico", stato: "Planned" },
+    { tempo: "01:05:15", nome: "Starship landing flip", nomeIT: "Manovra di capovolgimento di Starship per l'atterraggio", stato: "Planned" },
+    { tempo: "01:05:20", nome: "Starship landing burn", nomeIT: "Manovra di atterraggio di Starship", stato: "Planned" },
+    { tempo: "01:05:34", nome: "Starship splashdown", nomeIT: "Amaraggio di Starship", stato: "Planned" }
+];
+
+        const tabella = document.getElementById('eventi-tabella').getElementsByTagName('tbody')[0];
+        const tempoZeroInput = document.getElementById('tempo-zero');
+        const setBtn = document.getElementById('set-btn');
+        const playBtn = document.getElementById('play-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const langBtn = document.getElementById('lang-btn');
+        const infoBox = document.getElementById('info-box');
+
+        let tempoLiftoff = moment(tempoZeroInput.value, 'YYYY-MM-DD HH:mm');
+        let intervalId = null;
+        let conteggioAttivo = false;
+        let isItalian = true;
+        let tempoCalcolo = null;
+
+        function aggiornaTabella() {
+            tabella.innerHTML = '';
+            eventi.forEach(evento => {
+                const row = tabella.insertRow();
+                row.insertCell(0).textContent = evento.tempo;
+                row.insertCell(1).textContent = isItalian ? evento.nomeIT : evento.nome;
+                const [orarioEvento, contoAllaRovescia] = calcolaTempi(evento.tempo);
+                row.insertCell(2).textContent = orarioEvento;
+                row.insertCell(3).textContent = contoAllaRovescia;
+            });
+            aggiornaInfoBox();
+        }
+
+        /*function calcolaTempi(tempoT) {
+            if (!tempoLiftoff) return ['--:--', '--:--:--'];
+            const [ore, minuti, secondi] = tempoT.split(':').map(Number);
+            const durata = moment.duration({hours: ore, minutes: minuti, seconds: secondi});
+            const tempoEventoAssoluto = tempoLiftoff.clone().subtract(durata);
+            const orarioEvento = tempoEventoAssoluto.format('DD/MM/YYYY HH:mm:ss');
+            const diff = tempoEventoAssoluto.diff(moment());
+            const contoAllaRovescia = moment.utc(Math.max(0, diff)).format('HH:mm:ss');
+            return [orarioEvento, contoAllaRovescia];
+        }*/
+		
+function calcolaTempi(tempoT) {
+    if (!tempoLiftoff) return ['--:--', '--:--:--'];
+    
+    // Verifica se il tempo è negativo
+    const isNegative = tempoT.startsWith('-');
+    const [ore, minuti, secondi] = tempoT.replace('-', '').split(':').map(Number);
+    const durata = moment.duration({ hours: ore, minutes: minuti, seconds: secondi });
+    
+    // Se il tempo era negativo, sottrai la durata, altrimenti aggiungi
+    const tempoEventoAssoluto = isNegative ? tempoLiftoff.clone().subtract(durata) : tempoLiftoff.clone().add(durata);
+    
+    const orarioEvento = tempoEventoAssoluto.format('DD/MM/YYYY HH:mm:ss');
+    const diff = tempoEventoAssoluto.diff(moment());
+    const contoAllaRovescia = moment.utc(Math.max(0, diff)).format('HH:mm:ss');
+    
+    return [orarioEvento, contoAllaRovescia];
+}
+
+		
+
+        function aggiornaContoAllaRovescia() {
+            if (conteggioAttivo) {
+                aggiornaTabella();
+            }
+        }
+
+        function aggiornaInfoBox() {
+            const oraLocale = moment().format('DD/MM/YYYY HH:mm:ss');
+            const oraGMT = moment().utc().format('DD/MM/YYYY HH:mm:ss');
+            infoBox.innerHTML = `
+                ${isItalian ? 'Calcolato alle' : 'Calculated at'}: ${tempoCalcolo ? tempoCalcolo.format('DD/MM/YYYY HH:mm:ss') : '--'}<br>
+                ${isItalian ? 'Ora locale attuale' : 'Current local time'}: ${oraLocale}<br>
+                ${isItalian ? 'Orario GMT attuale' : 'Current GMT time'}: ${oraGMT}
+            `;
+        }
+
+        function cambiaLingua() {
+            isItalian = !isItalian;
+            document.getElementById('title').textContent = isItalian ? 'Eventi di Lancio e Conto alla Rovescia' : 'Launch Events and Countdown';
+            document.getElementById('label-liftoff').textContent = isItalian ? 'Inserisci il tempo di Liftoff (YYYY-MM-DD HH:mm):' : 'Enter Liftoff time (YYYY-MM-DD HH:mm):';
+            document.getElementById('th-event').textContent = isItalian ? 'Evento' : 'Event';
+            document.getElementById('th-event-time').textContent = isItalian ? 'Orario Evento' : 'Event Time';
+            document.getElementById('th-countdown').textContent = isItalian ? 'Conto alla Rovescia' : 'Countdown';
+            aggiornaTabella();
+        }
+
+        setBtn.addEventListener('click', () => {
+            const nuovoTempoLiftoff = moment(tempoZeroInput.value, 'YYYY-MM-DD HH:mm');
+            if (nuovoTempoLiftoff.isValid()) {
+                if (conteggioAttivo) {
+                    if (confirm(isItalian ? 'Vuoi resettare il conto alla rovescia con il nuovo orario di Liftoff?' : 'Do you want to reset the countdown with the new Liftoff time?')) {
+                        tempoLiftoff = nuovoTempoLiftoff;
+                        tempoCalcolo = moment();
+                        aggiornaTabella();
+                    }
+                } else {
+                    tempoLiftoff = nuovoTempoLiftoff;
+                    tempoCalcolo = moment();
+                    aggiornaTabella();
+                }
+            } else {
+                alert(isItalian ? 'Inserisci un orario valido nel formato YYYY-MM-DD HH:mm' : 'Enter a valid time in the format YYYY-MM-DD HH:mm');
+            }
+        });
+
+        playBtn.addEventListener('click', () => {
+            if (tempoLiftoff) {
+                conteggioAttivo = true;
+                intervalId = setInterval(aggiornaContoAllaRovescia, 1000);
+                playBtn.disabled = true;
+                pauseBtn.disabled = false;
+            } else {
+                alert(isItalian ? 'Imposta prima il tempo di Liftoff' : 'Set the Liftoff time first');
+            }
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            conteggioAttivo = false;
+            clearInterval(intervalId);
+            playBtn.disabled = false;
+            pauseBtn.disabled = true;
+        });
+
+        langBtn.addEventListener('click', cambiaLingua);
+
+        aggiornaTabella();
+    </script>
+</body>
+</html>
