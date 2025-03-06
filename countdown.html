@@ -6,83 +6,181 @@
     <title>Eventi di Lancio e Conto alla Rovescia</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.33/moment-timezone-with-data.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        button {
-            margin-right: 5px;
-            margin-bottom: 5px;
-        }
-        #info-box {
-            margin-bottom: 20px;
-        }
-        .file-container {
-            margin-top: 15px;
-            margin-bottom: 15px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            background-color: #f9f9f9;
-        }
-    </style>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .container {
+        position: relative;
+        width:70%;
+    }
+    .controls {
+        margin-bottom: 20px;
+    }
+    .control-group {
+        margin-bottom: 10px;
+
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    th {
+        background-color: #f2f2f2;
+    }
+    button {
+        margin-right: 5px;
+        margin-bottom: 5px;
+    }
+    .file-container {
+        margin-top: 15px;
+        margin-bottom: 15px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        background-color: #f9f9f9;
+    }
+    .info-box {
+        margin-bottom: 20px;
+    }
+    .image-container {
+        position: fixed;
+        right: 20px;
+        top: 20px;
+        z-index: 1000;
+    }
+    .fixed-image {
+
+        border: 2px solid #000;
+        background-color: white;
+    }
+    .table-container {
+        overflow-y: auto;
+        max-height: 400px;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Stile per il cerchietto */
+    .dot {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background-color: red;
+        border-radius: 50%;
+        transform: translate(-50%, -50%); /* Centra il cerchietto rispetto alle coordinate */
+        z-index: 1001; /* Assicura che il cerchietto sia sopra l'immagine */
+    }
+
+    .dot2 {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background-color: blue;
+        border-radius: 50%;
+        transform: translate(-50%, -50%); /* Centra il cerchietto rispetto alle coordinate */
+        z-index: 1001; /* Assicura che il cerchietto sia sopra l'immagine */
+    }
+
+
+</style>
+
 </head>
 <body>
-    <h1 id="title">Eventi di Lancio e Conto alla Rovescia</h1>
-V.1.0.0<br><br>
+    <h1 id="title">Conto alla Rovescia</h1>
 
-    <div>
-        <label for="tempo-zero" id="label-liftoff">Inserisci il tempo di Liftoff (YYYY-MM-DD HH:mm):</label>
-        <input type="text" id="tempo-zero" placeholder="YYYY-MM-DD HH:mm" value="2025-01-16 23:10">
-        <button id="set-btn">SET</button>
-        <button id="play-btn">PLAY</button>
-        <button id="pause-btn" disabled>PAUSE</button>
-        <button id="lang-btn">EN/IT</button><br>
-        <label for="countdown-input" id="label-countdown">Inserisci il countdown (HH:mm:ss):</label>
-        <input type="text" id="countdown-input" placeholder="HH:mm:ss">
-        <button id="from-countdown-btn">FROM COUNTDOWN</button>
-    </div>
+<div class="container">
+<div class="launch">
+Launch: <span id ="spnName"></span><br>
+Date: <span id ="spnDate"></span><br>
+</div>
+    <div class="controls">
+        <!-- Quarta riga: Caricamento file JSON -->
+        <div class="file-container">
+            <label for="json-file" id="label-file">Carica eventi da file JSON:</label>
+            <input type="file" id="json-file" accept=".json">
+        </div>
 
-    <div class="file-container">
-        <label for="json-file" id="label-file">Carica eventi da file JSON:</label>
-        <input type="file" id="json-file" accept=".json">
-        <button id="load-json-btn" id="load-btn">CARICA JSON</button>
+        <!-- Prima riga: Input tempo di Liftoff -->
+        <div class="control-group">
+            <label for="tempo-zero" id="label-liftoff">Inserisci il tempo di Liftoff (YYYY-MM-DD HH:mm:ss):</label>
+            <input type="text" id="tempo-zero" placeholder="YYYY-MM-DD HH:mm:ss" value="2025-03-06 23:30:00">
+            <button id="set-btn">SET</button>
+        </div>
+        <div class="control-group">
+            <label id="label-oppure">oppure</label>
+        </div>
+        <!-- Terza riga: Input countdown -->
+        <div class="control-group">
+            <label for="countdown-input" id="label-countdown">Inserisci il countdown attuale(HH:mm:ss):</label>
+            <input type="text" id="countdown-input" placeholder="HH:mm:ss" value="00:00:10">
+            <button id="from-countdown-btn">FROM COUNTDOWN</button>
+        </div>
+
+        <!-- Seconda riga: Pulsanti PLAY, PAUSE, EN/IT -->
+        <div class="control-group">
+            <button id="play-btn">PLAY</button>
+            <button id="pause-btn" disabled>PAUSE</button>
+            <button id="lang-btn">Language</button>
+        </div>
+
+
+        <!-- Stato del file caricato -->
         <div id="file-status"></div>
     </div>
+    <div>
+        <div class="info-box">
+        <div id="info-box"></div>
+    </div>
 
-    <div id="info-box"></div>
 
-    <table id="eventi-tabella">
-        <thead>
-            <tr>
-                <th>T-</th>
-                <th id="th-event">Evento</th>
-                <th id="th-event-time">Orario Evento</th>
-                <th id="th-countdown">Conto alla Rovescia</th>
-            </tr>
-        </thead>
-        <tbody>
-        </tbody>
-    </table>
-
+    <!-- Immagine fissa -->
+    <div class="image-container">
+        <img src="trajectory.png" alt="Trajectory" class="fixed-image" id="myImage">
+    </div>
+    <!-- Tabella eventi -->
+    <div class="table-container">
+        <table id="eventi-tabella">
+            <thead>
+                <tr>
+                    <th>T-</th>
+                    <th id="th-event">Evento</th>
+                    <th id="th-event-time">Orario Evento</th>
+                    <th id="th-countdown">Conto alla Rovescia</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+<script src="eventi.js"></script>
     <script>
         // Array di eventi iniziale vuoto
         let eventi = [];
+    // Verifica se la variabile eventi è già definita
+    if (typeof eventi === 'undefined') {
+        // Se non è definita, assegna un array vuoto
+        jsonData = {};
+        eventi = [];
+    } else {
+        eventi = jsonData.events;
+        document.getElementById("spnName").innerHTML = jsonData.name;
+        document.getElementById("spnDate").innerHTML = jsonData.dateGMT;
+        document.getElementById("tempo-zero").value = jsonData.dateGMT;
+    }
+
+        let dot;
+        let dot2;
+        initDot();
 
         const tabella = document.getElementById('eventi-tabella').getElementsByTagName('tbody')[0];
         const tempoZeroInput = document.getElementById('tempo-zero');
@@ -93,10 +191,10 @@ V.1.0.0<br><br>
         const infoBox = document.getElementById('info-box');
         const countdownInput = document.getElementById('countdown-input');
         const jsonFileInput = document.getElementById('json-file');
-        const loadJsonBtn = document.getElementById('load-json-btn');
+        //const loadJsonBtn = document.getElementById('load-json-btn');
         const fileStatus = document.getElementById('file-status');
 
-        let tempoLiftoff = moment(tempoZeroInput.value, 'YYYY-MM-DD HH:mm');
+        let tempoLiftoff = moment(tempoZeroInput.value, 'YYYY-MM-DD HH:mm:ss');
         let intervalId = null;
         let conteggioAttivo = false;
         let isItalian = true;
@@ -105,9 +203,54 @@ V.1.0.0<br><br>
         // Helper function to parse a time string in the format HH:mm:ss
         function parseTimeString(timeString) {
             const [hours, minutes, seconds] = timeString.split(':').map(Number);
-            return { hours, minutes, seconds };
+            let sign = 1;
+            if (timeString.substring(0,1) === "-") sign = 1; else sign = -1;
+            return { hours, minutes, seconds, sign };
         }
 
+
+// Funzione per caricare gli eventi da un file JSON
+jsonFileInput.addEventListener('change', function () {
+    const file = jsonFileInput.files[0];
+    if (!file) {
+        fileStatus.textContent = isItalian ? 'Nessun file selezionato' : 'No file selected';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        try {
+            jsonData = JSON.parse(e.target.result);
+            if (Array.isArray(jsonData.events)) {
+                eventi = jsonData.events;
+                document.getElementById("spnName").innerHTML = jsonData.name;
+                document.getElementById("spnDate").innerHTML = jsonData.dateGMT;
+                document.getElementById("tempo-zero").value = jsonData.dateGMT;
+                fileStatus.textContent = isItalian ?
+                    `Caricati ${eventi.length} eventi con successo` :
+                    `Successfully loaded ${eventi.length} events`;
+                fileStatus.style.color = 'green';
+                aggiornaTabella();
+            } else {
+                throw new Error('Il file non contiene un array');
+            }
+        } catch (error) {
+            fileStatus.textContent = isItalian ?
+                `Errore nel parsing del file JSON: ${error.message}` :
+                `Error parsing JSON file: ${error.message}`;
+            fileStatus.style.color = 'red';
+        }
+    };
+    reader.onerror = function () {
+        fileStatus.textContent = isItalian ?
+            'Errore nella lettura del file' :
+            'Error reading file';
+        fileStatus.style.color = 'red';
+    };
+    reader.readAsText(file);
+});
+
+/*
         // Funzione per caricare gli eventi da un file JSON
         loadJsonBtn.addEventListener('click', function() {
             const file = jsonFileInput.files[0];
@@ -119,7 +262,6 @@ V.1.0.0<br><br>
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-console.log(e.target.result);
                     const jsonData = JSON.parse(e.target.result);
                     if (Array.isArray(jsonData)) {
                         eventi = jsonData;
@@ -146,10 +288,11 @@ console.log(e.target.result);
             };
             reader.readAsText(file);
         });
-
+*/
         // Function to set tempo-zero based on the countdown
         document.getElementById('from-countdown-btn').addEventListener('click', function () {
             const countdownValue = document.getElementById('countdown-input').value;
+            eventi.forEach( e => {e.done = false});
 
             if (!countdownValue) {
                 alert(isItalian ? 'Inserisci un valore valido per il countdown (HH:mm:ss)' : 'Enter a valid countdown value (HH:mm:ss)');
@@ -157,58 +300,75 @@ console.log(e.target.result);
             }
 
             // Parse the countdown
-            const { hours, minutes, seconds } = parseTimeString(countdownValue);
+            const { hours, minutes, seconds, sign} = parseTimeString(countdownValue);
             if (isNaN(hours) || isNaN(minutes) || isNaN(seconds)) {
                 alert(isItalian ? 'Formato countdown non valido. Usa HH:mm:ss' : 'Invalid countdown format. Use HH:mm:ss');
                 return;
             }
-
+console.log("SIGN", sign);
             // Calculate the new tempo-zero
             const now = new Date();
-            const newTempoZero = new Date(now.getTime() + (hours * 3600 + minutes * 60 + seconds) * 1000);
-
-            // Format the date to "YYYY-MM-DD HH:mm"
-            const formattedDate = `${newTempoZero.getFullYear()}-${String(newTempoZero.getMonth() + 1).padStart(2, '0')}-${String(newTempoZero.getDate()).padStart(2, '0')} ${String(newTempoZero.getHours()).padStart(2, '0')}:${String(newTempoZero.getMinutes()).padStart(2, '0')}`;
+            const newTempoZero = new Date(now.getTime() + sign * (hours * 3600 + minutes * 60 + seconds) * 1000);
+console.log("newTempoZero=",newTempoZero);
+            // Format the date to "YYYY-MM-DD HH:mm:ss"
+            const formattedDate = `${newTempoZero.getFullYear()}-${String(newTempoZero.getMonth() + 1).padStart(2, '0')}-${String(newTempoZero.getDate()).padStart(2, '0')} ${String(newTempoZero.getHours()).padStart(2, '0')}:${String(newTempoZero.getMinutes()).padStart(2, '0')}:${String(newTempoZero.getSeconds()).padStart(2, '0')}`;
 
             // Update the tempo-zero input
             tempoZeroInput.value = formattedDate;
 
             // Aggiorna il tempo di liftoff
-            tempoLiftoff = moment(formattedDate, 'YYYY-MM-DD HH:mm');
+            tempoLiftoff = moment(formattedDate, 'YYYY-MM-DD HH:mm:ss');
             tempoCalcolo = moment();
             aggiornaTabella();
+
+// Start!
+            if (tempoLiftoff) {
+                conteggioAttivo = true;
+                intervalId = setInterval(aggiornaContoAllaRovescia, 1000);
+                playBtn.disabled = true;
+                pauseBtn.disabled = false;
+            } else {
+                alert(isItalian ? 'Imposta prima il tempo di Liftoff' : 'Set the Liftoff time first');
+            }
         });
 
-        function aggiornaTabella() {
-            tabella.innerHTML = '';
-            eventi.forEach(evento => {
-                const row = tabella.insertRow();
-                row.insertCell(0).textContent = evento.tempo;
-                row.insertCell(1).textContent = isItalian ? evento.nomeIT : evento.nome;
-                const [orarioEvento, contoAllaRovescia] = calcolaTempi(evento.tempo);
-                row.insertCell(2).textContent = orarioEvento;
-                row.insertCell(3).textContent = contoAllaRovescia;
-            });
-            aggiornaInfoBox();
+function aggiornaTabella() {
+    tabella.innerHTML = '';
+    eventi.forEach(evento => {
+        const row = tabella.insertRow();
+        row.insertCell(0).textContent = evento.tempo;
+        row.insertCell(1).textContent = isItalian ? evento.nomeIT : evento.nome;
+        const [orarioEvento, contoAllaRovescia] = calcolaTempi(evento.tempo);
+        row.insertCell(2).textContent = orarioEvento;
+        row.insertCell(3).textContent = contoAllaRovescia;
+
+        // Controlla se il conto alla rovescia è "00:00:00" e l'evento non è già stato completato
+        if (contoAllaRovescia === "00:00:00" && !evento.done) {
+console.log("[aggiornaTabella] - Tempo zero per " , evento.nome, evento.tempo);
+            aggiornaCerchietto(evento); // Mostra il cerchietto
+            evento.done = true; // Imposta l'evento come completato
         }
+    });
+    aggiornaInfoBox();
+}
 
-        function calcolaTempi(tempoT) {
-            if (!tempoLiftoff) return ['--:--', '--:--:--'];
+function calcolaTempi(tempoT) {
+    if (!tempoLiftoff) return ['--:--', '--:--:--'];
 
-            // Verifica se il tempo è negativo
-            const isNegative = tempoT.startsWith('-');
-            const [ore, minuti, secondi] = tempoT.replace('-', '').split(':').map(Number);
-            const durata = moment.duration({ hours: ore, minutes: minuti, seconds: secondi });
+    // Verifica se il tempo è negativo
+    const isNegative = tempoT.startsWith('-');
+    const [ore, minuti, secondi] = tempoT.replace('-', '').split(':').map(Number);
+    const durata = moment.duration({ hours: ore, minutes: minuti, seconds: secondi });
 
-            // Se il tempo era negativo, sottrai la durata, altrimenti aggiungi
-            const tempoEventoAssoluto = isNegative ? tempoLiftoff.clone().subtract(durata) : tempoLiftoff.clone().add(durata);
+    // Se il tempo era negativo, sottrai la durata, altrimenti aggiungi
+    const tempoEventoAssoluto = isNegative ? tempoLiftoff.clone().subtract(durata) : tempoLiftoff.clone().add(durata);
 
-            const orarioEvento = tempoEventoAssoluto.format('DD/MM/YYYY HH:mm:ss');
-            const diff = tempoEventoAssoluto.diff(moment());
-            const contoAllaRovescia = moment.utc(Math.max(0, diff)).format('HH:mm:ss');
+    const orarioEvento = tempoEventoAssoluto.format('DD/MM/YYYY HH:mm:ss');
+    const diff = tempoEventoAssoluto.diff(moment());
+    const contoAllaRovescia = moment.utc(Math.max(0, diff)).format('HH:mm:ss');
 
-            return [orarioEvento, contoAllaRovescia];
-        }
+    return [orarioEvento, contoAllaRovescia];
+}
 
         function aggiornaContoAllaRovescia() {
             if (conteggioAttivo) {
@@ -230,7 +390,8 @@ console.log(e.target.result);
             isItalian = !isItalian;
             document.getElementById('title').textContent = isItalian ? 'Eventi di Lancio e Conto alla Rovescia' : 'Launch Events and Countdown';
             document.getElementById('label-liftoff').textContent = isItalian ? 'Inserisci il tempo di Liftoff (YYYY-MM-DD HH:mm):' : 'Enter Liftoff time (YYYY-MM-DD HH:mm):';
-            document.getElementById('label-countdown').textContent = isItalian ? 'Inserisci il countdown (HH:mm:ss):' : 'Enter countdown (HH:mm:ss):';
+            document.getElementById('label-oppure').textContent = isItalian ? 'oppure' : 'or';
+            document.getElementById('label-countdown').textContent = isItalian ? 'Inserisci il countdown attuale (HH:mm:ss):' : 'Enter current countdown value (HH:mm:ss):';
             document.getElementById('label-file').textContent = isItalian ? 'Carica eventi da file JSON:' : 'Load events from JSON file:';
             document.getElementById('load-json-btn').textContent = isItalian ? 'CARICA JSON' : 'LOAD JSON';
             document.getElementById('th-event').textContent = isItalian ? 'Evento' : 'Event';
@@ -245,6 +406,9 @@ console.log(e.target.result);
                         `Successfully loaded ${eventi.length} events`;
                 }
             }
+
+            // Aggiorna anche l'attributo alt dell'immagine
+            document.getElementById('myImage').alt = isItalian ? 'Immagine razzo' : 'Trajectory';
 
             aggiornaTabella();
         }
@@ -266,6 +430,17 @@ console.log(e.target.result);
             } else {
                 alert(isItalian ? 'Inserisci un orario valido nel formato YYYY-MM-DD HH:mm' : 'Enter a valid time in the format YYYY-MM-DD HH:mm');
             }
+
+// Start!
+            if (tempoLiftoff) {
+                conteggioAttivo = true;
+                intervalId = setInterval(aggiornaContoAllaRovescia, 1000);
+                playBtn.disabled = true;
+                pauseBtn.disabled = false;
+            } else {
+                alert(isItalian ? 'Imposta prima il tempo di Liftoff' : 'Set the Liftoff time first');
+            }
+
         });
 
         playBtn.addEventListener('click', () => {
@@ -291,6 +466,47 @@ console.log(e.target.result);
         // Inizializzazione
         tempoCalcolo = moment();
         aggiornaTabella();
+
+
+    // Funzione per aggiornare la posizione del cerchietto
+    function aggiornaCerchietto(evento) {
+console.log("[disegno] ", evento.tempo);
+        if ( evento.posStarship && evento.posStarship.x !== 0 && evento.posStarship.y !== 0) {
+console.log("    [disegno] Dati validi, disegno: ", evento.nome, evento.posStarship.x, evento.posStarship.y);
+            // Mostra il cerchietto e imposta la posizione
+            dot.style.display = 'block';
+            dot.style.left = `${evento.posStarship.x}px`;
+            dot.style.top = `${evento.posStarship.y}px`;
+        } else {
+//console.log("[disegno] Dati nulli, non faccio niente");
+
+        }
+
+        if ( evento.posHeavy && evento.posHeavy.x !== 0 && evento.posHeavy.y !== 0) {
+console.log("    [disegno] Dati validi, disegno Heavy: ", evento.nome, evento.posHeavy.x, evento.posHeavy.y);
+            // Mostra il cerchietto e imposta la posizione
+            dot2.style.display = 'block';
+            dot2.style.left = `${evento.posHeavy.x}px`;
+            dot2.style.top = `${evento.posHeavy.y}px`;
+        } else {
+//console.log("[disegno] Dati nulli, non faccio niente");
+
+        }
+    }
+
+
+function initDot() {
+  dot = document.createElement('div');
+  dot.id = 'dot';
+  dot.classList.add('dot');
+  document.querySelector('.image-container').appendChild(dot);
+
+  dot2 = document.createElement('div');
+  dot2.id = 'dot2';
+  dot2.classList.add('dot2');
+  document.querySelector('.image-container').appendChild(dot2);
+}
+
     </script>
 </body>
 </html>

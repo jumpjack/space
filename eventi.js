@@ -1,13 +1,13 @@
-{
+jsonData = {
 "name" : "SpaceX IFT-8",
 "dateGMT" : "2025-03-06 23:30:00",
 "events": [
   {
-    "tempo": "-01:15:00",
+    "tempo": "-01:25:00",
     "nome": "SpaceX Flight Director conducts poll and verifies GO for propellant load",
     "nomeIT": "Il Direttore di Volo SpaceX conduce il sondaggio e verifica il via libera per il carico del propellente",
     "done" : false ,
-    "posHeavy" : {"x" : 0 , "y" : 0}, 
+    "posHeavy" : {"x" : 0 , "y" : 0},
     "posStarship" : {"x" : 0, "y": 0}
  },
   {
@@ -15,7 +15,7 @@
     "nome": "Ship LOX (liquid oxygen) load underway",
     "nomeIT": "Caricamento LOX (ossigeno liquido) della nave in corso",
     "done" : false ,
-    "posHeavy" : {"x" : 0 , "y" : 0}, 
+    "posHeavy" : {"x" : 0 , "y" : 0},
     "posStarship" : {"x" : 0, "y": 0}
  },
   {
@@ -31,7 +31,7 @@
     "nome": "Booster fuel load underway",
     "nomeIT": "Caricamento carburante del booster in corso",
     "done" : false ,
-    "posHeavy" : {"x" : 0 , "y" : 0}, 
+    "posHeavy" : {"x" : 0 , "y" : 0},
     "posStarship" : {"x" : 0, "y": 0}
  },
   {
@@ -39,32 +39,32 @@
     "nome": "Booster LOX load underway",
     "nomeIT": "Caricamento LOX del booster in corso",
     "done" : false ,
-    "posHeavy" : {"x" : 0 , "y" : 0}, 
-    "posStarship" : {"x" : 0, "y": 0} 
+    "posHeavy" : {"x" : 0 , "y" : 0},
+    "posStarship" : {"x" : 0, "y": 0}
  },
   {
     "tempo": "-00:19:40",
     "nome": "Raptor begins engine chill on booster and ship",
     "nomeIT": "Raptor inizia il raffreddamento dei motori sul booster e sulla nave",
     "done" : false ,
-    "posHeavy" : {"x" : 0 , "y" : 0}, 
-    "posStarship" : {"x" : 0, "y": 0} 
+    "posHeavy" : {"x" : 0 , "y" : 0},
+    "posStarship" : {"x" : 0, "y": 0}
  },
   {
     "tempo": "-00:03:20",
     "nome": "Ship propellant load complete",
     "nomeIT": "Caricamento propellente della nave completato",
     "done" : false ,
-    "posHeavy" : {"x" : 0 , "y" : 0}, 
-    "posStarship" : {"x" : 0, "y": 0} 
+    "posHeavy" : {"x" : 0 , "y" : 0},
+    "posStarship" : {"x" : 0, "y": 0}
  },
   {
     "tempo": "-00:02:50",
     "nome": "Booster propellant load complete",
     "nomeIT": "Caricamento propellente del booster completato",
     "done" : false ,
-    "posHeavy" : {"x" : 0 , "y" : 0}, 
-    "posStarship" : {"x" : 0, "y": 0} 
+    "posHeavy" : {"x" : 0 , "y" : 0},
+    "posStarship" : {"x" : 0, "y": 0}
  },
   {
     "tempo": "-00:00:30",
@@ -151,8 +151,8 @@
     "nome": "Hot-stage jettison",
     "nomeIT": "Espulsione componenti hot-stage",
     "done" : false ,
-    "posHeavy" : {"x" : 0 , "y" : 0}, 
-    "posStarship" : {"x" : 0, "y": 0} 
+    "posHeavy" : {"x" : 0 , "y" : 0},
+    "posStarship" : {"x" : 0, "y": 0}
  },
   {
     "tempo": "00:06:37",
@@ -160,7 +160,7 @@
     "nomeIT": "Inizio manovra di atterraggio Super Heavy",
     "done" : false ,
     "posHeavy" : {"x" : 48 , "y" : 144},
-    "posStarship" : {"x" : 0, "y": 0} 
+    "posStarship" : {"x" : 0, "y": 0}
  },
   {
     "tempo": "00:06:57",
@@ -168,7 +168,7 @@
     "nomeIT": "Fine manovra di atterraggio e cattura Super Heavy",
     "done" : false ,
     "posHeavy" : {"x" : 44 , "y" : 232},
-    "posStarship" : {"x" : 0, "y": 0} 
+    "posStarship" : {"x" : 0, "y": 0}
  },
   {
     "tempo": "00:08:44",
@@ -183,15 +183,15 @@
     "nome": "Payload deploy demo",
     "nomeIT": "Dimostrazione di rilascio del carico utile",
     "done" : false ,
-    "posHeavy" : {"x" : 0 , "y" : 0}, 
-    "posStarship" : {"x" : 0, "y": 0} 
+    "posHeavy" : {"x" : 0 , "y" : 0},
+    "posStarship" : {"x" : 0, "y": 0}
  },
   {
     "tempo": "00:37:28",
     "nome": "Raptor in-space relight demo",
     "nomeIT": "Dimostrazione di riaccensione Raptor nello spazio",
     "done" : false ,
-    "posHeavy" : {"x" : 0 , "y" : 0}, 
+    "posHeavy" : {"x" : 0 , "y" : 0},
     "posStarship" : {"x" : 0, "y": 0}
  },
   {
@@ -199,7 +199,7 @@
     "nome": "Starship entry",
     "nomeIT": "Ingresso atmosferico Starship",
     "done" : false ,
-    "posHeavy" : {"x" : 0 , "y" : 0}, 
+    "posHeavy" : {"x" : 0 , "y" : 0},
     "posStarship" : {"x" : 473, "y": 63}
  },
   {
@@ -207,7 +207,7 @@
     "nome": "Starship is transonic",
     "nomeIT": "Starship in regime transonico",
     "done" : false ,
-    "posHeavy" : {"x" : 0 , "y" : 0}, 
+    "posHeavy" : {"x" : 0 , "y" : 0},
     "posStarship" : {"x" : 502, "y": 122}
  },
   {
@@ -215,7 +215,7 @@
     "nome": "Starship is subsonic",
     "nomeIT": "Starship in regime subsonico",
     "done" : false ,
-    "posHeavy" : {"x" : 0 , "y" : 0}, 
+    "posHeavy" : {"x" : 0 , "y" : 0},
     "posStarship" : {"x" : 506, "y": 164}
  },
   {
@@ -223,7 +223,7 @@
     "nome": "Landing flip",
     "nomeIT": "Manovra di capovolgimento per atterraggio",
     "done" : false ,
-    "posHeavy" : {"x" : 0 , "y" : 0}, 
+    "posHeavy" : {"x" : 0 , "y" : 0},
     "posStarship" : {"x" : 511, "y": 201}
  },
   {
@@ -231,7 +231,7 @@
     "nome": "Landing burn",
     "nomeIT": "Manovra di atterraggio",
     "done" : false ,
-    "posHeavy" : {"x" : 0 , "y" : 0}, 
+    "posHeavy" : {"x" : 0 , "y" : 0},
     "posStarship" : {"x" : 506, "y": 236}
  },
   {
