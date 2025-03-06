@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eventi di Lancio e Conto alla Rovescia</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.33/moment-timezone-with-data.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        button {
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        #info-box {
+            margin-bottom: 20px;
+        }
+        .file-container {
+            margin-top: 15px;
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="title">Eventi di Lancio e Conto alla Rovescia</h1>
+V.1.0.0<br><br>
+
+    <div>
+        <label for="tempo-zero" id="label-liftoff">Inserisci il tempo di Liftoff (YYYY-MM-DD HH:mm):</label>
+        <input type="text" id="tempo-zero" placeholder="YYYY-MM-DD HH:mm" value="2025-01-16 23:10">
+        <button id="set-btn">SET</button>
+        <button id="play-btn">PLAY</button>
+        <button id="pause-btn" disabled>PAUSE</button>
+        <button id="lang-btn">EN/IT</button><br>
+        <label for="countdown-input" id="label-countdown">Inserisci il countdown (HH:mm:ss):</label>
+        <input type="text" id="countdown-input" placeholder="HH:mm:ss">
+        <button id="from-countdown-btn">FROM COUNTDOWN</button>
+    </div>
+
+    <div class="file-container">
+        <label for="json-file" id="label-file">Carica eventi da file JSON:</label>
+        <input type="file" id="json-file" accept=".json">
+        <button id="load-json-btn" id="load-btn">CARICA JSON</button>
+        <div id="file-status"></div>
+    </div>
+
+    <div id="info-box"></div>
+
+    <table id="eventi-tabella">
+        <thead>
+            <tr>
+                <th>T-</th>
+                <th id="th-event">Evento</th>
+                <th id="th-event-time">Orario Evento</th>
+                <th id="th-countdown">Conto alla Rovescia</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+        // Array di eventi iniziale vuoto
+        let eventi = [];
+
+        const tabella = document.getElementById('eventi-tabella').getElementsByTagName('tbody')[0];
+        const tempoZeroInput = document.getElementById('tempo-zero');
+        const setBtn = document.getElementById('set-btn');
+        const playBtn = document.getElementById('play-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const langBtn = document.getElementById('lang-btn');
+        const infoBox = document.getElementById('info-box');
+        const countdownInput = document.getElementById('countdown-input');
+        const jsonFileInput = document.getElementById('json-file');
+        const loadJsonBtn = document.getElementById('load-json-btn');
+        const fileStatus = document.getElementById('file-status');
+
+        let tempoLiftoff = moment(tempoZeroInput.value, 'YYYY-MM-DD HH:mm');
+        let intervalId = null;
+        let conteggioAttivo = false;
+        let isItalian = true;
+        let tempoCalcolo = null;
+
+        // Helper function to parse a time string in the format HH:mm:ss
+        function parseTimeString(timeString) {
+            const [hours, minutes, seconds] = timeString.split(':').map(Number);
+            return { hours, minutes, seconds };
+        }
+
+        // Funzione per caricare gli eventi da un file JSON
+        loadJsonBtn.addEventListener('click', function() {
+            const file = jsonFileInput.files[0];
+            if (!file) {
+                fileStatus.textContent = isItalian ? 'Nessun file selezionato' : 'No file selected';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+console.log(e.target.result);
+                    const jsonData = JSON.parse(e.target.result);
+                    if (Array.isArray(jsonData)) {
+                        eventi = jsonData;
+                        fileStatus.textContent = isItalian ?
+                            `Caricati ${eventi.length} eventi con successo` :
+                            `Successfully loaded ${eventi.length} events`;
+                        fileStatus.style.color = 'green';
+                        aggiornaTabella();
+                    } else {
+                        throw new Error('Il file non contiene un array');
+                    }
+                } catch (error) {
+                    fileStatus.textContent = isItalian ?
+                        `Errore nel parsing del file JSON: ${error.message}` :
+                        `Error parsing JSON file: ${error.message}`;
+                    fileStatus.style.color = 'red';
+                }
+            };
+            reader.onerror = function() {
+                fileStatus.textContent = isItalian ?
+                    'Errore nella lettura del file' :
+                    'Error reading file';
+                fileStatus.style.color = 'red';
+            };
+            reader.readAsText(file);
+        });
+
+        // Function to set tempo-zero based on the countdown
+        document.getElementById('from-countdown-btn').addEventListener('click', function () {
+            const countdownValue = document.getElementById('countdown-input').value;
+
+            if (!countdownValue) {
+                alert(isItalian ? 'Inserisci un valore valido per il countdown (HH:mm:ss)' : 'Enter a valid countdown value (HH:mm:ss)');
+                return;
+            }
+
+            // Parse the countdown
+            const { hours, minutes, seconds } = parseTimeString(countdownValue);
+            if (isNaN(hours) || isNaN(minutes) || isNaN(seconds)) {
+                alert(isItalian ? 'Formato countdown non valido. Usa HH:mm:ss' : 'Invalid countdown format. Use HH:mm:ss');
+                return;
+            }
+
+            // Calculate the new tempo-zero
+            const now = new Date();
+            const newTempoZero = new Date(now.getTime() + (hours * 3600 + minutes * 60 + seconds) * 1000);
+
+            // Format the date to "YYYY-MM-DD HH:mm"
+            const formattedDate = `${newTempoZero.getFullYear()}-${String(newTempoZero.getMonth() + 1).padStart(2, '0')}-${String(newTempoZero.getDate()).padStart(2, '0')} ${String(newTempoZero.getHours()).padStart(2, '0')}:${String(newTempoZero.getMinutes()).padStart(2, '0')}`;
+
+            // Update the tempo-zero input
+            tempoZeroInput.value = formattedDate;
+
+            // Aggiorna il tempo di liftoff
+            tempoLiftoff = moment(formattedDate, 'YYYY-MM-DD HH:mm');
+            tempoCalcolo = moment();
+            aggiornaTabella();
+        });
+
+        function aggiornaTabella() {
+            tabella.innerHTML = '';
+            eventi.forEach(evento => {
+                const row = tabella.insertRow();
+                row.insertCell(0).textContent = evento.tempo;
+                row.insertCell(1).textContent = isItalian ? evento.nomeIT : evento.nome;
+                const [orarioEvento, contoAllaRovescia] = calcolaTempi(evento.tempo);
+                row.insertCell(2).textContent = orarioEvento;
+                row.insertCell(3).textContent = contoAllaRovescia;
+            });
+            aggiornaInfoBox();
+        }
+
+        function calcolaTempi(tempoT) {
+            if (!tempoLiftoff) return ['--:--', '--:--:--'];
+
+            // Verifica se il tempo è negativo
+            const isNegative = tempoT.startsWith('-');
+            const [ore, minuti, secondi] = tempoT.replace('-', '').split(':').map(Number);
+            const durata = moment.duration({ hours: ore, minutes: minuti, seconds: secondi });
+
+            // Se il tempo era negativo, sottrai la durata, altrimenti aggiungi
+            const tempoEventoAssoluto = isNegative ? tempoLiftoff.clone().subtract(durata) : tempoLiftoff.clone().add(durata);
+
+            const orarioEvento = tempoEventoAssoluto.format('DD/MM/YYYY HH:mm:ss');
+            const diff = tempoEventoAssoluto.diff(moment());
+            const contoAllaRovescia = moment.utc(Math.max(0, diff)).format('HH:mm:ss');
+
+            return [orarioEvento, contoAllaRovescia];
+        }
+
+        function aggiornaContoAllaRovescia() {
+            if (conteggioAttivo) {
+                aggiornaTabella();
+            }
+        }
+
+        function aggiornaInfoBox() {
+            const oraLocale = moment().format('DD/MM/YYYY HH:mm:ss');
+            const oraGMT = moment().utc().format('DD/MM/YYYY HH:mm:ss');
+            infoBox.innerHTML = `
+                ${isItalian ? 'Calcolato alle' : 'Calculated at'}: ${tempoCalcolo ? tempoCalcolo.format('DD/MM/YYYY HH:mm:ss') : '--'}<br>
+                ${isItalian ? 'Ora locale attuale' : 'Current local time'}: ${oraLocale}<br>
+                ${isItalian ? 'Orario GMT attuale' : 'Current GMT time'}: ${oraGMT}
+            `;
+        }
+
+        function cambiaLingua() {
+            isItalian = !isItalian;
+            document.getElementById('title').textContent = isItalian ? 'Eventi di Lancio e Conto alla Rovescia' : 'Launch Events and Countdown';
+            document.getElementById('label-liftoff').textContent = isItalian ? 'Inserisci il tempo di Liftoff (YYYY-MM-DD HH:mm):' : 'Enter Liftoff time (YYYY-MM-DD HH:mm):';
+            document.getElementById('label-countdown').textContent = isItalian ? 'Inserisci il countdown (HH:mm:ss):' : 'Enter countdown (HH:mm:ss):';
+            document.getElementById('label-file').textContent = isItalian ? 'Carica eventi da file JSON:' : 'Load events from JSON file:';
+            document.getElementById('load-json-btn').textContent = isItalian ? 'CARICA JSON' : 'LOAD JSON';
+            document.getElementById('th-event').textContent = isItalian ? 'Evento' : 'Event';
+            document.getElementById('th-event-time').textContent = isItalian ? 'Orario Evento' : 'Event Time';
+            document.getElementById('th-countdown').textContent = isItalian ? 'Conto alla Rovescia' : 'Countdown';
+
+            // Aggiorna il messaggio di stato del file
+            if (fileStatus.textContent) {
+                if (fileStatus.textContent.includes('Caricati') || fileStatus.textContent.includes('Successfully loaded')) {
+                    fileStatus.textContent = isItalian ?
+                        `Caricati ${eventi.length} eventi con successo` :
+                        `Successfully loaded ${eventi.length} events`;
+                }
+            }
+
+            aggiornaTabella();
+        }
+
+        setBtn.addEventListener('click', () => {
+            const nuovoTempoLiftoff = moment(tempoZeroInput.value, 'YYYY-MM-DD HH:mm');
+            if (nuovoTempoLiftoff.isValid()) {
+                if (conteggioAttivo) {
+                    if (confirm(isItalian ? 'Vuoi resettare il conto alla rovescia con il nuovo orario di Liftoff?' : 'Do you want to reset the countdown with the new Liftoff time?')) {
+                        tempoLiftoff = nuovoTempoLiftoff;
+                        tempoCalcolo = moment();
+                        aggiornaTabella();
+                    }
+                } else {
+                    tempoLiftoff = nuovoTempoLiftoff;
+                    tempoCalcolo = moment();
+                    aggiornaTabella();
+                }
+            } else {
+                alert(isItalian ? 'Inserisci un orario valido nel formato YYYY-MM-DD HH:mm' : 'Enter a valid time in the format YYYY-MM-DD HH:mm');
+            }
+        });
+
+        playBtn.addEventListener('click', () => {
+            if (tempoLiftoff) {
+                conteggioAttivo = true;
+                intervalId = setInterval(aggiornaContoAllaRovescia, 1000);
+                playBtn.disabled = true;
+                pauseBtn.disabled = false;
+            } else {
+                alert(isItalian ? 'Imposta prima il tempo di Liftoff' : 'Set the Liftoff time first');
+            }
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            conteggioAttivo = false;
+            clearInterval(intervalId);
+            playBtn.disabled = false;
+            pauseBtn.disabled = true;
+        });
+
+        langBtn.addEventListener('click', cambiaLingua);
+
+        // Inizializzazione
+        tempoCalcolo = moment();
+        aggiornaTabella();
+    </script>
+</body>
+</html>

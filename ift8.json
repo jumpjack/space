@@ -1,0 +1,152 @@
+[
+  {
+    "tempo": "-01:15:00",
+    "nome": "SpaceX Flight Director conducts poll and verifies GO for propellant load",
+    "nomeIT": "Il Direttore di Volo SpaceX conduce il sondaggio e verifica il via libera per il carico del propellente"
+  },
+  {
+    "tempo": "-00:45:59",
+    "nome": "Ship LOX (liquid oxygen) load underway",
+    "nomeIT": "Caricamento LOX (ossigeno liquido) della nave in corso"
+  },
+  {
+    "tempo": "-00:42:59",
+    "nome": "Ship fuel (liquid methane) load underway",
+    "nomeIT": "Caricamento carburante (metano liquido) della nave in corso"
+  },
+  {
+    "tempo": "-00:41:22",
+    "nome": "Booster fuel load underway",
+    "nomeIT": "Caricamento carburante del booster in corso"
+  },
+  {
+    "tempo": "-00:35:35",
+    "nome": "Booster LOX load underway",
+    "nomeIT": "Caricamento LOX del booster in corso"
+  },
+  {
+    "tempo": "-00:19:40",
+    "nome": "Raptor begins engine chill on booster and ship",
+    "nomeIT": "Raptor inizia il raffreddamento dei motori sul booster e sulla nave"
+  },
+  {
+    "tempo": "-00:03:20",
+    "nome": "Ship propellant load complete",
+    "nomeIT": "Caricamento propellente della nave completato"
+  },
+  {
+    "tempo": "-00:02:50",
+    "nome": "Booster propellant load complete",
+    "nomeIT": "Caricamento propellente del booster completato"
+  },
+  {
+    "tempo": "-00:00:30",
+    "nome": "SpaceX flight director verifies GO for launch",
+    "nomeIT": "Il direttore di volo SpaceX verifica il via libera per il lancio"
+  },
+  {
+    "tempo": "-00:00:10",
+    "nome": "Flame deflector activation",
+    "nomeIT": "Attivazione deflettore di fiamma"
+  },
+  {
+    "tempo": "-00:00:03",
+    "nome": "Raptor ignition sequence begins",
+    "nomeIT": "Inizio sequenza di accensione Raptor"
+  },
+  {
+    "tempo": "00:00:00",
+    "nome": "Excitement guaranteed",
+    "nomeIT": "Emozioni garantite"
+  },
+  {
+    "tempo": "00:00:02",
+    "nome": "Liftoff",
+    "nomeIT": "Decollo"
+  },
+  {
+    "tempo": "00:01:02",
+    "nome": "Max Q (moment of peak aerodynamic stress on the rocket)",
+    "nomeIT": "Max Q (momento di massimo stress aerodinamico sul razzo)"
+  },
+  {
+    "tempo": "00:02:32",
+    "nome": "Super Heavy MECO (most engines cut off)",
+    "nomeIT": "Super Heavy MECO (spegnimento della maggior parte dei motori)"
+  },
+  {
+    "tempo": "00:02:40",
+    "nome": "Hot-staging (Starship Raptor ignition and stage separation)",
+    "nomeIT": "Hot-staging (accensione Raptor di Starship e separazione degli stadi)"
+  },
+  {
+    "tempo": "00:02:45",
+    "nome": "Super Heavy boostback burn startup",
+    "nomeIT": "Avvio manovra di ritorno Super Heavy"
+  },
+  {
+    "tempo": "00:03:30",
+    "nome": "Super Heavy boostback burn shutdown",
+    "nomeIT": "Fine manovra di ritorno Super Heavy"
+  },
+  {
+    "tempo": "00:03:32",
+    "nome": "Hot-stage jettison",
+    "nomeIT": "Espulsione componenti hot-stage"
+  },
+  {
+    "tempo": "00:06:37",
+    "nome": "Super Heavy landing burn start",
+    "nomeIT": "Inizio manovra di atterraggio Super Heavy"
+  },
+  {
+    "tempo": "00:06:57",
+    "nome": "Super Heavy landing burn shutdown and catch",
+    "nomeIT": "Fine manovra di atterraggio e cattura Super Heavy"
+  },
+  {
+    "tempo": "00:08:44",
+    "nome": "Starship engine cutoff",
+    "nomeIT": "Spegnimento motori Starship"
+  },
+  {
+    "tempo": "00:17:24",
+    "nome": "Payload deploy demo",
+    "nomeIT": "Dimostrazione di rilascio del carico utile"
+  },
+  {
+    "tempo": "00:37:28",
+    "nome": "Raptor in-space relight demo",
+    "nomeIT": "Dimostrazione di riaccensione Raptor nello spazio"
+  },
+  {
+    "tempo": "00:47:22",
+    "nome": "Starship entry",
+    "nomeIT": "Ingresso atmosferico Starship"
+  },
+  {
+    "tempo": "01:03:05",
+    "nome": "Starship is transonic",
+    "nomeIT": "Starship in regime transonico"
+  },
+  {
+    "tempo": "01:04:20",
+    "nome": "Starship is subsonic",
+    "nomeIT": "Starship in regime subsonico"
+  },
+  {
+    "tempo": "01:06:04",
+    "nome": "Landing flip",
+    "nomeIT": "Manovra di capovolgimento per atterraggio"
+  },
+  {
+    "tempo": "01:06:06",
+    "nome": "Landing burn",
+    "nomeIT": "Manovra di atterraggio"
+  },
+  {
+    "tempo": "01:06:26",
+    "nome": "An exciting landing!",
+    "nomeIT": "Un atterraggio emozionante!"
+  }
+]
